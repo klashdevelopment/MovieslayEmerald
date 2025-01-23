@@ -191,7 +191,7 @@ export default function SeriesPage({ params }: MovieProps) {
 
     return (
         <>
-            <Head>
+            <head>
                 <title>{show ? `${show.name} (S${season?.season_number})` : 'Show'} - Movieslay</title>
                 <meta name="description" content={season ? season.overview : 'Show details'} />
                 <meta property="og:title" content={show ? `${show.name} (S${season?.season_number})` : 'Show'} />
@@ -202,7 +202,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 <meta name="twitter:title" content={show ? `${show.name} (S${season?.season_number})` : 'Show'} />
                 <meta name="twitter:description" content={season ? season.overview : 'Show details'} />
                 <meta name="twitter:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-            </Head>
+            </head>
             <PageLayout title={`${show ? `${show.name} ${season?.name}` : 'Show'}`}>
                 <div className="flex align flex-col gap-05 movie-page">
                     {failed ? <>

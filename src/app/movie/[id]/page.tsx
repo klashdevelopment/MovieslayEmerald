@@ -32,7 +32,7 @@ export default function MoviePage({ params }: MovieProps) {
 
     return (
         <>
-            <Head>
+            <head>
                 <title>{movie ? movie.title : 'Movie'} - Movieslay</title>
                 <meta name="description" content={movie ? movie.overview : 'Movie details'} />
                 <meta property="og:title" content={movie ? movie.title : 'Movie'} />
@@ -43,7 +43,7 @@ export default function MoviePage({ params }: MovieProps) {
                 <meta name="twitter:title" content={movie ? movie.title : 'Movie'} />
                 <meta name="twitter:description" content={movie ? movie.overview : 'Movie details'} />
                 <meta name="twitter:image" content={`https://image.tmdb.org/t/p/w342${movie?.poster_path}`} />
-            </Head>
+            </head>
             <PageLayout title={`${movie ? movie.title : 'Movie'}`}>
                 <div className={`flex align flex-col ${fullscreen ? '' : 'gap-05'} movie-page${fullscreen ? ' fullscreen' : ''}`} style={{gap:`${fullscreen ? '0px' : '1rem'}`}}>
                     { failed ? <>
