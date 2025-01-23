@@ -59,16 +59,16 @@ export default function MovieIndex() {
     };
 
     return (
-        <PageLayout title="Movies">
+        <PageLayout title="Search">
             <Sheet variant={'plain'} sx={{ height: '20%', overflow: 'hidden', marginTop: '8px' }}>
                 <WavyBackground style={{ width: '100%', height: '100%' }} colors={[
-                    '#38bdf8',  // Bright Blue (replacing #00FF00)
-                    '#818cf8',  // Soft Violet (replacing #32CD32)
-                    '#c084fc',  // Light Purple (replacing #228B22)
-                    '#e879f9',  // Magenta (replacing #008000)
-                    '#22d3ee'   // Sky Blue (replacing #ADFF2F)
+                    '#34d399',
+                    '#10b981',
+                    '#059669',
+                    '#047857',
+                    '#065f46'
                 ]}>
-                    <h1 className="relative z-10 text-lg md:text-7xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] bg-clip-text text-transparent bg-gradient-to-b from-[#FFCCFF] to-[#FFCCFF90]  text-center font-sans font-bold">
+                    <h1 className="relative z-10 text-lg md:text-7xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] bg-clip-text text-transparent bg-gradient-to-b from-[#A7F3D0] to-[#A7F3D090] text-center font-sans font-bold">
                         Search
                     </h1>
                 </WavyBackground>
@@ -77,9 +77,7 @@ export default function MovieIndex() {
             <div className="flex-align-flex-col list-list">
                 <div className="flex align justify gap-05">
                     <Select placeholder="Filter by...">
-                        <Option value="movie">Movies</Option>
-                        <Option value="tv">TV Shows</Option>
-                        {/* <Option value="none">Filtering not yet complete</Option> */}
+                        <Option value="none">Filtering not yet complete</Option>
                     </Select>
                     <Input placeholder="Search for movies or tv shows..." style={{ width: '100%' }} onChange={searchChanged} value={search} />
                     <Button variant="outlined" color="primary" onClick={() => { updateResults(search) }} startDecorator={<i className="fa-solid fa-magnifying-glass" />}>Search</Button>
@@ -94,7 +92,7 @@ export default function MovieIndex() {
                             {results?.results.filter(r => r.media_type === 'movie' && !r.adult).map((result) => (
                                 <div key={result.id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo(result.id, result.media_type) }}>
                                     <img src={`https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={getNameOrTitle(result)} />
-                                    <span>{getNameOrTitle(result)} {result.adult ? '(A)' : ''}</span>
+                                    <span>{getNameOrTitle(result)}</span>
                                 </div>
                             ))}
                         </div>
@@ -103,7 +101,7 @@ export default function MovieIndex() {
                             {results?.results.filter(r => r.media_type === 'tv' || r.media_type === 'series' && !r.adult).map((result) => (
                                 <div key={result.id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo(result.id, result.media_type) }}>
                                     <img src={`https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={(result as TVShow).name} />
-                                    <span>{(result as TVShow).name} {result.adult ? '(A)' : ''}</span>
+                                    <span>{(result as TVShow).name}</span>
                                 </div>
                             ))}
                         </div>

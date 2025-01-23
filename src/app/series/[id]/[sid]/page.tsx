@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getMovies, getSeasonData } from "@/app/components/useTMDB";
 import React from "react";
 import { useRouter } from "next/navigation";
+import Head from "next/head";
 
 interface MovieProps {
     params: Promise<{ id: number, sid: number }>;
@@ -189,47 +190,61 @@ export default function SeriesPage({ params }: MovieProps) {
     }, [params]);
 
     return (
-        <PageLayout title={`${show ? `${show.name} ${season?.name}` : 'Show'}`}>
-            <div className="flex align flex-col gap-05 movie-page">
-                {failed ? <>
-                    <h1>Show not found.</h1>
-                </> : <>
-                    <div className="info-card flex align gap-05 flex-col" style={{ marginTop: '8px', overflowY: 'auto', height: '65%' }}>
-                        {season?.episodes.map(episode => (
-                            <button key={episode.id} className="server" onClick={()=>{router.push(`/series/${show?.id}/${season.season_number}/${episode.episode_number}`)}} style={{width: '100%'}}>{episode.episode_number}. {episode.name}</button>
-                        ))}
-                    </div>
-                    <div className="info-card flex align gap-1">
-                        <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-                        <div className="flex flex-col justify details">
-                            <b>{show?.name}</b>
-                            <span>S{season?.season_number} - {season?.name}</span>
-                            <p>{show?.overview}</p>
-                            <p>{season?.overview}</p>
+        <>
+            <Head>
+                <title>{show ? `${show.name} (S${season?.season_number})` : 'Show'} - Movieslay</title>
+                <meta name="description" content={season ? season.overview : 'Show details'} />
+                <meta property="og:title" content={show ? `${show.name} (S${season?.season_number})` : 'Show'} />
+                <meta property="og:description" content={season ? season.overview : 'Show details'} />
+                <meta property="og:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
+                <meta property="og:url" content={window.location.href} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={show ? `${show.name} (S${season?.season_number})` : 'Show'} />
+                <meta name="twitter:description" content={season ? season.overview : 'Show details'} />
+                <meta name="twitter:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
+            </Head>
+            <PageLayout title={`${show ? `${show.name} ${season?.name}` : 'Show'}`}>
+                <div className="flex align flex-col gap-05 movie-page">
+                    {failed ? <>
+                        <h1>Show not found.</h1>
+                    </> : <>
+                        <div className="info-card flex align gap-05 flex-col" style={{ marginTop: '8px', overflowY: 'auto', height: '65%' }}>
+                            {season?.episodes.map(episode => (
+                                <button key={episode.id} className="server" onClick={()=>{router.push(`/series/${show?.id}/${season.season_number}/${episode.episode_number}`)}} style={{width: '100%'}}>{episode.episode_number}. {episode.name}</button>
+                            ))}
                         </div>
-                        <div className="flex flex-col gap-05 justify servers">
-                            <button className="server" onClick={() => {
-                                navigator.clipboard.writeText(window.location.href);
-                            }}>
-                                <i className="fa-solid fa-clone"></i>
-                                Copy Link
-                            </button>
-                            <button className="server" onClick={() => {
-                                window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'show like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);
-                            }}>
-                                <i className="fa-solid fa-brands fa-bluesky"></i>
-                                Bsky Share
-                            </button>
-                            <button className="server" onClick={() => {
-                                window.open(`https://twitter.com/intent/tweet?text=Watch%20${encodeURIComponent(show?.name || 'shows like this one')}%20on%20Movieslay:&url=${encodeURIComponent(window.location.href)}`);
-                            }}>
-                                <i className="fa-solid fa-brands fa-twitter"></i>
-                                Tweet
-                            </button>
+                        <div className="info-card flex align gap-1">
+                            <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
+                            <div className="flex flex-col justify details">
+                                <b>{show?.name}</b>
+                                <span>S{season?.season_number} - {season?.name}</span>
+                                <p>{show?.overview}</p>
+                                <p>{season?.overview}</p>
+                            </div>
+                            <div className="flex flex-col gap-05 justify servers">
+                                <button className="server" onClick={() => {
+                                    navigator.clipboard.writeText(window.location.href);
+                                }}>
+                                    <i className="fa-solid fa-clone"></i>
+                                    Copy Link
+                                </button>
+                                <button className="server" onClick={() => {
+                                    window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'show like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);
+                                }}>
+                                    <i className="fa-solid fa-brands fa-bluesky"></i>
+                                    Bluesky
+                                </button>
+                                <button className="server" onClick={() => {
+                                    window.open(`https://twitter.com/intent/tweet?text=Watch%20${encodeURIComponent(show?.name || 'shows like this one')}%20on%20Movieslay:&url=${encodeURIComponent(window.location.href)}`);
+                                }}>
+                                    <i className="fa-solid fa-brands fa-twitter"></i>
+                                    Tweet
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </>}
-            </div>
-        </PageLayout>
+                    </>}
+                </div>
+            </PageLayout>
+        </>
     );
 }

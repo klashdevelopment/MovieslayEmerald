@@ -16,27 +16,27 @@ async function useTMDB(path: string, customKey?: string) {
 }
 
 async function getMovies(page: number, customKey?: string) {
-    const string = `discover/movie?page=${page}&sort_by=popularity.desc&language=en-US`;
+    const string = `discover/movie?page=${page}&sort_by=popularity.desc&include_adult=false&language=en-US`;
     return await useTMDB(string, customKey);
 }
 async function getShows(page: number, customKey?: string) {
-    const string = `discover/tv?page=${page}&sort_by=popularity.desc&language=en-US`;
+    const string = `discover/tv?page=${page}&sort_by=popularity.desc&include_adult=false&language=en-US`;
     return await useTMDB(string, customKey);
 }
 async function getGenres(customKey?: string) {
-    const string = `genre/movie/list?language=en-US`;
+    const string = `genre/movie/list?language=en-US&include_adult=false`;
     return await useTMDB(string, customKey);
 }
 async function getGenresTV(customKey?: string) {
-    const string = `genre/tv/list?language=en-US`;
+    const string = `genre/tv/list?language=en-US&include_adult=false`;
     return await useTMDB(string, customKey);
 }
 async function getMovie(id: number, customKey?: string) {
-    const string = `movie/${id}?language=en-US`;
+    const string = `movie/${id}?language=en-US&include_adult=false`;
     return await useTMDB(string, customKey);
 }
 async function getTV(id: number, customKey?: string) {
-    const string = `tv/${id}?language=en-US`;
+    const string = `tv/${id}?language=en-US&include_adult=false`;
     return await useTMDB(string, customKey);
 }
 
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
 
     if(type === 'search') {
         const query = searchParams.get('query') || '';
-        const string = `search/multi?query=${query}&page=${page}&language=en-US`;
+        const string = `search/multi?query=${query}&page=${page}&include_adult=false&language=en-US&certification_country=US&certification.lte=PG-13`;
         var dataSearch = await useTMDB(string, customApiKey);
         return NextResponse.json(dataSearch);
     }

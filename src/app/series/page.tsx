@@ -48,7 +48,7 @@ export default function MovieIndex() {
     }
 
     return (
-        <PageLayout title="Movies">
+        <PageLayout title="Shows">
             <Sheet variant={'plain'} sx={{height:'30%',overflow:'hidden',marginTop:'8px'}}>
                 <WavyBackground style={{width:'100%',height:'100%'}} colors={[
     "#f87171", // Replacing #38bdf8
@@ -77,7 +77,7 @@ export default function MovieIndex() {
                 <b>Trending Shows</b>
                 <div className="flex gap-1 movie-list">
                     {trendingShows.map((movie) => (
-                        <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={()=>{goTo(movie.id, 'movie')}}>
+                        <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={()=>{goTo(movie.id, 'series')}}>
                             <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
                             <span>{movie.title}</span>
                         </div>
@@ -88,7 +88,7 @@ export default function MovieIndex() {
                 <div className="flex gap-1 movie-list">
                     {genres.map((genre) => (
                         <div key={genre.id} className={`movie-card`}>
-                            <img src={`/genres/${genre.name.split(' & ')[0]}.png`} alt={genre.name} />
+                            <img src={`/genres/${genre.name.split(' & ')[0]}.webp`} alt={genre.name} loading={"lazy"} />
                             <span>{genre.name}</span>
                         </div>
                     ))}

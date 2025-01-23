@@ -53,7 +53,8 @@ export function getNameOrTitle(media: MediaType): string {
     switch (media.media_type) {
         case 'movie':
             return (media as Movie).title;
-        case 'series' || 'tv':
+        case 'series':
+        case 'tv':
             return (media as TVShow).name;
         case 'person':
             return (media as Person).name;
