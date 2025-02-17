@@ -1,5 +1,5 @@
 "use client";
-import PageLayout from "@/app/components/PageLayout";
+import PageLayout, { useIsDesktop } from "@/app/components/PageLayout";
 import { TMDBMovie } from "../page";
 import { useEffect, useState } from "react";
 import { getMovies } from "@/app/components/useTMDB";
@@ -15,6 +15,7 @@ export default function MoviePage({ params }: MovieProps) {
     const [movie, setMovie] = useState<TMDBMovie | null>(null);
     const [failed, setFailed] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
+    const isDesktop = useIsDesktop();
 
     const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc'>('vidsrc');
 
@@ -105,7 +106,7 @@ export default function MoviePage({ params }: MovieProps) {
                                 </button>
                             </div>
                         </div>
-                        <p style={{fontSize:'14px',textAlign:'center'}}><i className="fa-solid fa-warning" style={{color:"#ff5050",marginRight:'5px'}}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p>
+                        { !isDesktop ? <p style={{fontSize:'14px',textAlign:'center'}}><i className="fa-solid fa-warning" style={{color:"#ff5050",marginRight:'5px'}}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p> : "" }
                     </>}
                 </div>
             </PageLayout>

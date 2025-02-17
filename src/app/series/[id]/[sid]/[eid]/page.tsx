@@ -1,5 +1,5 @@
 "use client";
-import PageLayout from "../../../../components/PageLayout";
+import PageLayout, { useIsDesktop } from "../../../../components/PageLayout";
 import { TMDBShow } from "../../../page";
 import { useEffect, useState } from "react";
 import { getMovies, getSeasonData } from "../../../../components/useTMDB";
@@ -168,6 +168,7 @@ export default function SeriesPage({ params }: MovieProps) {
     const [epid, setEpid] = useState(0);
 
     const [fullscreen, setFullscreen] = useState(false);
+    const isDesktop = useIsDesktop();
 
     const router = useRouter();
 
@@ -269,7 +270,7 @@ export default function SeriesPage({ params }: MovieProps) {
                                 </button>
                             </div>
                         </div>
-                        <p style={{fontSize:'14px'}}><i className="fa-solid fa-warning" style={{color:"#ff5050",marginRight:'5px'}}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p>
+                        { !isDesktop ? <p style={{fontSize:'14px',textAlign:'center'}}><i className="fa-solid fa-warning" style={{color:"#ff5050",marginRight:'5px'}}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p> : "" }
                     </>}
                 </div>
             </PageLayout>

@@ -230,6 +230,18 @@ body {
     .hide-on-desktop {
         display: flex;
     }
+    .mobileCards {
+        margin: 0px 0;
+        flex-direction: column;
+        gap: 10px;
+        height: auto;
+    }
+    .mobileCards > div {
+        padding: 0;
+    }.mobileButtons {
+        flex-direction: column;
+    }
+    
 }
 .server.thin {
     padding: 0.2rem 0.5rem;
@@ -240,4 +252,9 @@ body {
 }
 .movie-page.fullscreen .info-card {
     display: none;
+}
+
+
+.desktop-app-framed .hide-on-desktopapp {
+    display: none !important;
 }
