@@ -1,6 +1,6 @@
 export const sources = {
     "2embed": {
-        "series": "https://www.2embed.cc/embed/%id%?s=%sid%&e=%eid%",
+        "series": "https://www.2embed.cc/embedtv/%id%&s=%sid%&e=%eid%",
         "movie": "https://www.2embed.cc/embed/%id%"
     },
     "smashy": {

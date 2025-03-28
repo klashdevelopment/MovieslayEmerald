@@ -118,29 +118,55 @@ export default function SeriesPage({ params }: MovieProps) {
             });
         });
     }, [params]);
+    useEffect(() => {
+        if (show) {
+            const title = `${show.name} - Movieslay`;
+            const description = show.overview || 'Show details';
+            const imageUrl = `https://image.tmdb.org/t/p/w342${show.poster_path}`;
+            const url = window.location.href;
+    
+            document.title = title;
+    
+            const metaTags = [
+                { name: "description", content: description },
+                { property: "og:title", content: title },
+                { property: "og:description", content: description },
+                { property: "og:image", content: imageUrl },
+                { property: "og:url", content: url },
+                { name: "twitter:card", content: "summary_large_image" },
+                { name: "twitter:title", content: title },
+                { name: "twitter:description", content: description },
+                { name: "twitter:image", content: imageUrl },
+            ];
+    
+            metaTags.forEach(({ name, property, content }) => {
+                const meta = document.createElement("meta");
+                if (name) meta.name = name;
+                if (property) meta.setAttribute("property", property);
+                meta.content = content;
+                document.head.appendChild(meta);
+            });
+    
+            return () => {
+                metaTags.forEach(({ name, property }) => {
+                    const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
+                    const meta = document.head.querySelector(selector);
+                    if (meta) document.head.removeChild(meta);
+                });
+            };
+        }
+    }, [show]);    
 
     const router = useRouter();
 
     return (
         <>
-            <head>
-                <title>{show ? show.name : 'Show'} - Movieslay</title>
-                <meta name="description" content={show ? show.overview : 'Show details'} />
-                <meta property="og:title" content={show ? show.name : 'Show'} />
-                <meta property="og:description" content={show ? show.overview : 'Show details'} />
-                <meta property="og:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-                <meta property="og:url" content={window.location.href} />
-                <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content={show ? show.name : 'Show'} />
-                <meta name="twitter:description" content={show ? show.overview : 'Show details'} />
-                <meta name="twitter:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-            </head>
             <PageLayout title={`${show ? show.name : 'Show'}`}>
                 <div className="flex align flex-col gap-05 movie-page">
                     {failed ? <>
                         <h1>Show not found.</h1>
                     </> : <>
-                        <div className="info-card flex align gap-05 flex-col" style={{marginTop: '8px',overflowY:'auto',height: '65%'}}>
+                        <div className="info-card selection flex align gap-05 flex-col" style={{marginTop: '8px',overflowY:'auto',height: '65%'}}>
                             {show?.seasons.map(season => (
                                 <button key={season.id} className="server" onClick={()=>{router.push(`/series/${show?.id}/${season.season_number}`)}} style={{width: '100%'}}>{season.season_number}. {season.name} ({season.episode_count} episodes)</button>
                             ))}
@@ -156,7 +182,7 @@ export default function SeriesPage({ params }: MovieProps) {
                                     navigator.clipboard.writeText(window.location.href);
                                 }}>
                                     <i className="fa-solid fa-clone"></i>
-                                    Copy Link
+                                    Copy
                                 </button>
                                 <button className="server" onClick={() => {
                                     window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'show like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);

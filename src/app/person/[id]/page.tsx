@@ -74,6 +74,44 @@ export default function SeriesPage({ params }: MovieProps) {
             });
         });
     }, [params]);
+    useEffect(() => {
+        if (person) {
+            const title = `${person.name} - Movieslay`;
+            const description = person.biography || 'Show details';
+            const imageUrl = person.profile_path ? `https://image.tmdb.org/t/p/w780${person.profile_path}` : 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';
+            const url = window.location.href;
+    
+            document.title = title;
+    
+            const metaTags = [
+                { name: "description", content: description },
+                { property: "og:title", content: title },
+                { property: "og:description", content: description },
+                { property: "og:image", content: imageUrl },
+                { property: "og:url", content: url },
+                { name: "twitter:card", content: "summary_large_image" },
+                { name: "twitter:title", content: title },
+                { name: "twitter:description", content: description },
+                { name: "twitter:image", content: imageUrl },
+            ];
+    
+            metaTags.forEach(({ name, property, content }) => {
+                const meta = document.createElement("meta");
+                if (name) meta.name = name;
+                if (property) meta.setAttribute("property", property);
+                meta.content = content;
+                document.head.appendChild(meta);
+            });
+    
+            return () => {
+                metaTags.forEach(({ name, property }) => {
+                    const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
+                    const meta = document.head.querySelector(selector);
+                    if (meta) document.head.removeChild(meta);
+                });
+            };
+        }
+    }, [person]);    
 
     return (
         <PageLayout title={`${person ? `${person.name}` : 'Person'}`}>

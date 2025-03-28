@@ -7,6 +7,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import sources from "@/app/components/Sources";
 import Head from "next/head";
+import Controls from "@/app/components/controls";
 
 interface MovieProps {
     params: Promise<{ id: number, sid: number, eid: number }>;
@@ -196,81 +197,96 @@ export default function SeriesPage({ params }: MovieProps) {
     }, [params]);
 
     const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc'>('vidsrc');
+    useEffect(() => {
+        if (show && season && epid) {
+            const title = `${show.name} S${season.season_number}E${epid} - Movieslay`;
+            const description = season.episodes[epid - 1]?.overview || 'Show details';
+            const imageUrl = `https://image.tmdb.org/t/p/w342${show.poster_path}`;
+            const url = window.location.href;
+
+            document.title = title;
+
+            const metaTags = [
+                { name: "description", content: description },
+                { property: "og:title", content: title },
+                { property: "og:description", content: description },
+                { property: "og:image", content: imageUrl },
+                { property: "og:url", content: url },
+                { name: "twitter:card", content: "summary_large_image" },
+                { name: "twitter:title", content: title },
+                { name: "twitter:description", content: description },
+                { name: "twitter:image", content: imageUrl },
+            ];
+
+            metaTags.forEach(({ name, property, content }) => {
+                const meta = document.createElement("meta");
+                if (name) meta.name = name;
+                if (property) meta.setAttribute("property", property);
+                meta.content = content;
+                document.head.appendChild(meta);
+            });
+
+            return () => {
+                metaTags.forEach(({ name, property }) => {
+                    const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
+                    const meta = document.head.querySelector(selector);
+                    if (meta) document.head.removeChild(meta);
+                });
+            };
+        }
+    }, [show, season, epid]);
+
+    function nextEpisode() {
+        if (show && season) {
+            if (epid < season.episodes.length) {
+                router.push(`/series/${show.id}/${season.season_number}/${parseInt(`${epid}`) + 1}`);
+            } else {
+                router.push(`/series/${show.id}/${season.season_number + 1}/1`);
+            }
+        }
+    }
+    function lastEpisode() {
+        if (show && season) {
+            if (epid > 1) {
+                router.push(`/series/${show.id}/${season.season_number}/${parseInt(`${epid}`) - 1}`);
+            } else {
+                router.push(`/series/${show.id}/${season.season_number - 1}/${season.episodes.length}`);
+            }
+        }
+    }
 
     return (
         <>
-            <head>
-                <title>{show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'} - Movieslay</title>
-                <meta name="description" content={season?.episodes[epid - 1].overview || 'Show details'} />
-                <meta property="og:title" content={show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'} />
-                <meta property="og:description" content={season?.episodes[epid - 1].overview || 'Show details'} />
-                <meta property="og:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-                <meta property="og:url" content={window.location.href} />
-                <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:title" content={show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'} />
-                <meta name="twitter:description" content={season?.episodes[epid - 1].overview || 'Show details'} />
-                <meta name="twitter:image" content={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
-            </head>
             <PageLayout title={`${show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'}`}>
-                <div className={`flex align flex-col ${fullscreen ? '' : 'gap-05'} movie-page${fullscreen ? ' fullscreen' : ''}`} style={{gap:`${fullscreen ? '0px' : '1rem'}`}}>
+                <div className={`flex align flex-col ${fullscreen ? '' : 'gap-05'} movie-page${fullscreen ? ' fullscreen' : ''}`} style={{ gap: `${fullscreen ? '0px' : '1rem'}` }}>
                     {failed ? <>
                         <h1>Show not found.</h1>
                     </> : <>
                         {fullscreen ? (
-                            <button style={{}} className="server thin" onClick={() => {
+                            <button className="server thin mnm-btn" onClick={() => {
                                 setFullscreen(false);
-                            }}><i className="fa-solid fa-compress"></i> Minimize</button>
+                            }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
-                        <iframe src={`${sources[source].series.replace('%id%',`${show?.id}`).replace('%sid%',`${season?.season_number}`).replace('%eid%',`${epid}`)}`} style={{marginTop:`${fullscreen ? '2px' : undefined}`}}></iframe>
+                        <iframe src={`${sources[source].series.replace('%id%', `${show?.id}`).replace('%sid%', `${season?.season_number}`).replace('%eid%', `${epid}`)}`} style={{ marginTop: `${fullscreen ? '2px' : undefined}` }}></iframe>
                         <div className={`info-card flex align gap-1`}>
                             <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
                             <div className="flex flex-col justify details">
-                                <b>{show?.name} - S{season?.season_number}E{epid}: {season?.episodes[epid-1].name}</b>
-                                <p>{season?.episodes[epid-1].overview}</p>
+                                <b>{show?.name} - S{season?.season_number}E{epid}: {season?.episodes[epid - 1].name}</b>
+                                <p>{season?.episodes[epid - 1].overview}</p>
                             </div>
                             <div className="flex flex-col gap-05 justify servers">
-                                {/* <button className="server" onClick={() => {
-                                    navigator.clipboard.writeText(window.location.href);
-                                }}>
-                                    <i className="fa-solid fa-clone"></i>
-                                    Copy Link
-                                </button>
-                                <button className="server" onClick={() => {
-                                    window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'show like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);
-                                }}>
-                                    <i className="fa-solid fa-brands fa-bluesky"></i>
-                                    Bluesky
-                                </button>
-                                <button className="server" onClick={() => {
-                                    window.open(`https://twitter.com/intent/tweet?text=Watch%20${encodeURIComponent(show?.name || 'shows like this one')}%20on%20Movieslay:&url=${encodeURIComponent(window.location.href)}`);
-                                }}>
-                                    <i className="fa-solid fa-brands fa-twitter"></i>
-                                    Tweet
-                                </button> */}
-                                <button className="server" onClick={()=>{
-                                    setFullscreen(!fullscreen);
-                                }}><i className="fa-solid fa-expand"></i> Expand</button>
-                                <button className="server" onClick={()=>{
-                                    setSource('vidsrc');
-                                }}>
-                                    <i className="fa-solid fa-server"></i>
-                                    VidSrc
-                                </button>
-                                <button className="server" onClick={()=>{
-                                    setSource('2embed');
-                                }}>
-                                    <i className="fa-solid fa-server"></i>
-                                    2Embed
-                                </button>
-                                <button className="server" onClick={()=>{
-                                    setSource('smashy');
-                                }}>
-                                    <i className="fa-solid fa-server"></i>
-                                    Smashy
-                                </button>
+                                <Controls
+                                    fullscreen={fullscreen}
+                                    setFullscreen={setFullscreen}
+                                    source={source}
+                                    setSource={setSource}
+                                    isMovie={false}
+                                    nextEpisode={nextEpisode}
+                                    lastEpisode={lastEpisode}
+                                />
                             </div>
                         </div>
-                        { !isDesktop ? <p style={{fontSize:'14px',textAlign:'center'}}><i className="fa-solid fa-warning" style={{color:"#ff5050",marginRight:'5px'}}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p> : "" }
+                        {!isDesktop ? <p className="hide-on-desktopapp hide-on-fullscreen" style={{ fontSize: '14px', textAlign: 'center' }}><i className="fa-solid fa-warning" style={{ color: "#ff5050", marginRight: '5px' }}></i>An adblocker is reccomended to deter harmful popups (outside of Movieslay's control)</p> : ""}
                     </>}
                 </div>
             </PageLayout>

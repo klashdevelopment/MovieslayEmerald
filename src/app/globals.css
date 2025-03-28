@@ -145,10 +145,10 @@ body {
     border: none;
     border: 1px solid #32383e50;
 }
-.server.active {
+.ss-item.active {
     background: #252540;
 }
-.server.active:hover {
+.ss-item.active:hover {
     background: #353550;
 }
 .movie-page:not(.fullscreen) iframe {
@@ -160,6 +160,15 @@ body {
     height: 30%;
     border: 1px solid #32383e;
     border-radius: 12px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+.info-card.selection {
+    flex-direction: column;
+    justify-content: flex-start;
 }
 .info-card img {
     height: 100%;
@@ -167,7 +176,7 @@ body {
     border-radius: 12px;
 }
 .servers {
-    width: 240px;
+    width: 200px;
 }
 .server {
     border-radius: 6px;
@@ -178,7 +187,13 @@ body {
     padding: 0.4rem 0.75rem;
     transition: all 0.2s ease;
 }
-.server:hover {
+.server.light {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    background: transparent !important;
+}
+.server:hover, .ss-item:hover {
     background: #333;
 }
 .hide-on-desktop {
@@ -186,14 +201,36 @@ body {
 }
 .details {
     overflow-y: auto;
-    max-height: 110%;
-    height: 'fit-content';
+    height: 100%;
+    flex-shrink: 0;
+    max-width: calc(100% - 370px);
     scrollbar-width: thin;
     scrollbar-color: #202025 #111;
 }
+.ss-item {
+    background: #222;
+    width: 50%;
+    height: 100%;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    text-align: center;
+}
+.server-split {
+    width: 100%;
+    display: flex;
+    height: 100%;
+    gap: 2px;
+}
+.left-corners {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+.right-corners {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
 
 .adult {
-    display: none !important;
     filter: blur(5px);
 }
 
@@ -223,9 +260,11 @@ body {
     }
     .info-card {
         width: 100%;
+        height: 140px;
     }
     .info-card .details {
         display: none;
+        /* width: calc(100% - 200px); */
     }
     .hide-on-desktop {
         display: flex;
@@ -246,6 +285,9 @@ body {
 .server.thin {
     padding: 0.2rem 0.5rem;
 }
+.movie-page.fullscreen {
+    padding: 0;
+}
 .movie-page.fullscreen iframe {
     width: 100%;
     height: 100%;
@@ -257,4 +299,29 @@ body {
 
 .desktop-app-framed .hide-on-desktopapp {
     display: none !important;
+}
+
+.desktop-app-framed {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+}
+
+.fullscreen .hide-on-fullscreen {
+    display: none !important;
+}
+.mnm-btn {
+    font-size: 22px;
+    background: #ffffff15;
+    border: 1px solid #ffffff4a;
+    position: absolute !important;
+    top: 10px;
+    left: 10px;
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
 }
