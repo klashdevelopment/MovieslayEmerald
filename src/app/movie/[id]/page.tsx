@@ -7,6 +7,7 @@ import React from "react";
 import Head from "next/head";
 import sources from "@/app/components/Sources";
 import Controls from "@/app/components/controls";
+import useRecentlyWatched from "@/app/data/RecentlyWatched";
 
 interface MovieProps {
     params: Promise<{ id: number }>;
@@ -18,7 +19,7 @@ export default function MoviePage({ params }: MovieProps) {
     const [fullscreen, setFullscreen] = useState(false);
     const isDesktop = useIsDesktop();
 
-    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc'>('vidsrc');
+    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');
 
     useEffect(() => {
         params.then(({ id }) => {
@@ -31,8 +32,18 @@ export default function MoviePage({ params }: MovieProps) {
             });
         });
     }, [params]);
+    const rw = useRecentlyWatched();
     useEffect(() => {
         if (movie) {
+            setTimeout(() => {
+                rw.addMedia({
+                    type: 'movie',
+                    title: movie.title,
+                    thumbnail: `https://image.tmdb.org/t/p/w342${movie.poster_path}`,
+                    id: `${movie.id}`,
+                    series: undefined
+                });
+            }, 10000);
             const title = `${movie.title} - Movieslay`;
             const description = movie.overview || 'Movie details';
             const imageUrl = `https://image.tmdb.org/t/p/w342${movie.poster_path}`;
@@ -78,13 +89,11 @@ export default function MoviePage({ params }: MovieProps) {
                         <h1>Movie not found.</h1>
                     </> : <>
                         {fullscreen ? (
-                            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'right', width: '100%' }}>
-                                <button style={{ marginTop: '2px' }} className="server thin" onClick={() => {
-                                    setFullscreen(false);
-                                }}><i className="fa-solid fa-compress"></i> Minimize</button>
-                            </div>
+                            <button className="server thin mnm-btn" onClick={() => {
+                                setFullscreen(false);
+                            }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
-                        <iframe src={`${sources[source].movie.replace('%id%', `${movie?.id}`)}`}></iframe>
+                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].movie.replace('%id%', `${movie?.id}`)}`}></iframe>
                         <div className="info-card flex align gap-1">
                             <img src={`https://image.tmdb.org/t/p/w342${movie?.poster_path}`} />
                             <div className="flex flex-col justify details">

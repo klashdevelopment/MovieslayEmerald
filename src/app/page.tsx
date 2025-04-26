@@ -8,7 +8,7 @@ export default function Home() {
     return (
         <PageLayout>
             <BackgroundBeams />
-            <div className="flex flex-col align justify full-w h-90 gap-05">
+            <div className="flex flex-col align justify full-w h-[100%] m5-[5%] gap-05">
                 <Homecontent />
             </div>
         </PageLayout>

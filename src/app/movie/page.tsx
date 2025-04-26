@@ -5,6 +5,7 @@ import { WavyBackground } from "../components/aceternity/BackgroundWave";
 import { useEffect, useState } from "react";
 import { getMovies } from "../components/useTMDB";
 import { useRouter } from "next/navigation";
+import exclusives from "../components/Exclusives";
 
 export interface TMDBMovie {
     id: number;
@@ -46,7 +47,7 @@ export default function MovieIndex() {
 
     const router = useRouter();
 
-    function goTo(id: number, type: string) {
+    function goTo(id: string|number, type: string) {
         router.push(`/${type}/${id}`);
     }
 
@@ -76,6 +77,16 @@ export default function MovieIndex() {
                     {trendingMovies.map((movie) => (
                         <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={()=>{goTo(movie.id, 'movie')}}>
                             <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
+                            <span>{movie.title}</span>
+                        </div>
+                    ))}
+                </div>
+                <div className="full-w" style={{height:'20px'}}></div>
+                <b>Our Favourites</b>
+                <div className="flex gap-1 movie-list">
+                    {exclusives.map((movie) => (
+                        <div key={movie.id} className={`movie-card`} onClick={()=>{goTo(movie.link, 'exclusive')}}>
+                            <img src={`${movie.image}`} alt={movie.title} />
                             <span>{movie.title}</span>
                         </div>
                     ))}

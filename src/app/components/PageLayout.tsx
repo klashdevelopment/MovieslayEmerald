@@ -40,8 +40,15 @@ export default function PageLayout({
                             </div>
                             <div className="nav-section media-options">
                                 <a onClick={()=>{router.push("/movie")}}><i className="fa-solid fa-camera-movie"></i> Movies</a>
-                                <a onClick={()=>{router.push("/series")}}><i className="fa-solid fa-clapperboard"></i> Shows</a>
-                                <a onClick={()=>{router.push("/search")}}><i className="fa-solid fa-magnifying-glass"></i> Search</a>
+                                <a onClick={()=>{router.push("/series")}}><i className="fa-solid fa-clapperboard"></i>
+                                    <span className="hide-on-mobile">Shows</span>
+                                    <span className="hide-on-desktop">TV</span>
+                                </a>
+                                <a onClick={()=>{router.push("/search")}}><i className="fa-solid fa-magnifying-glass"></i> 
+                                    <span className="hide-on-mobile">Search</span>
+                                    <span className="hide-on-desktop">Find</span>
+                                </a>
+                                <a onClick={()=>{router.push("/")}} className="hide-on-desktop"><i className="fa-solid fa-home"></i></a>
                                 <a onClick={()=>{router.push("/app")}} className="hide-on-mobile hide-on-desktopapp"><i className="fa-solid fa-grid-2"></i> App</a>
                             </div>
                             <div className="nav-section hide-on-mobile mini-options">
