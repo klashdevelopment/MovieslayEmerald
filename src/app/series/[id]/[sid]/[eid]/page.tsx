@@ -271,7 +271,7 @@ export default function SeriesPage({ params }: MovieProps) {
 
     return (
         <>
-            <PageLayout title={`${show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'}`}>
+            <PageLayout title={`${show ? `${show.name} S${season?.season_number}E${epid}` : 'Show'}`} hideNav={fullscreen}>
                 <div className={`flex align flex-col ${fullscreen ? '' : 'gap-05'} movie-page${fullscreen ? ' fullscreen' : ''}`} style={{ gap: `${fullscreen ? '0px' : '1rem'}` }}>
                     {failed ? <>
                         <h1>Show not found.</h1>

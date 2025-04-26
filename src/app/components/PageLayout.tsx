@@ -12,16 +12,21 @@ export function useIsDesktop() {
 
 export default function PageLayout({
     children,
-    title="Home"
+    title="Home",
+    hideNav=false
 }: Readonly<{
     children: React.ReactNode;
     title?: string;
+    hideNav?: boolean;
 }>) {
     var router = useRouter();
     const [isDesktop, setIsDesktop] = useState(false);
 
     useEffect(()=>{
-        if(navigator && navigator.userAgent.includes("MovieslayDesktop")) {
+        if(
+            (navigator && navigator.userAgent.includes("Movieslay")) ||
+            (location.origin.includes('desktop.movieslay.com'))
+        ) {
             setIsDesktop(true);
         }
     }, []);
@@ -34,7 +39,7 @@ export default function PageLayout({
             <CssVarsProvider defaultMode="dark">
                 <IsDesktopContext.Provider value={isDesktop}>
                     <Sheet variant={'outlined'} sx={{height: 'calc(100vh - 25px)', width: 'calc(100vw - 25px)', padding: '10px', boxSizing: 'border-box', borderRadius: '12px'}} className={"flex flex-col align" + (isDesktop ? " desktop-app-framed" : "")}>
-                        <Sheet sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', px: '10px', gap: '10px', width: '100%', height: '50px', borderRadius: '12px'}} className={"nav"} variant="outlined">
+                        {!(hideNav && isDesktop) && <Sheet sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', px: '10px', gap: '10px', width: '100%', height: '50px', borderRadius: '12px'}} className={"nav"} variant="outlined">
                             <div className="nav-section hide-on-mobile">
                                 <b>Movieslay</b> {title ? `| ${title}` : ""}
                             </div>
@@ -54,8 +59,8 @@ export default function PageLayout({
                             <div className="nav-section hide-on-mobile mini-options">
                                 <a onClick={()=>{router.push("/")}}><i className="fa-solid fa-home"></i></a>
                             </div>
-                        </Sheet>
-                        <Sheet sx={{px: '10px', display: 'flex', flexDirection:'column', width: '100%', height: 'calc(100% - 60px)', mt: '10px', borderRadius: '12px', overflowY: 'auto', scrollbarWidth: 'none'}} className={"content"} variant="outlined">
+                        </Sheet>}
+                        <Sheet sx={{px: `${hideNav ? '0px' : '10px'}`, display: 'flex', flexDirection:'column', width: '100%', height:`${hideNav ? '100%' : 'calc(100% - 60px)'}`, mt: `${hideNav ? '0px' : '10px'}`, borderRadius: '12px', overflowY: 'auto', scrollbarWidth: 'none'}} className={"content"} variant="outlined">
                             {children}
                         </Sheet>
                     </Sheet>

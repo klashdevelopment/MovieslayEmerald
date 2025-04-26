@@ -83,7 +83,7 @@ export default function MoviePage({ params }: MovieProps) {
 
     return (
         <>
-            <PageLayout title={`${movie ? movie.title : 'Movie'}`}>
+            <PageLayout title={`${movie ? movie.title : 'Movie'}`} hideNav={fullscreen}>
                 <div className={`flex align flex-col ${fullscreen ? '' : 'gap-05'} movie-page${fullscreen ? ' fullscreen' : ''}`} style={{ gap: `${fullscreen ? '0px' : '1rem'}` }}>
                     {failed ? <>
                         <h1>Movie not found.</h1>
