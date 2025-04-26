@@ -46,7 +46,7 @@ export default function MovieIndex() {
 
     const router = useRouter();
 
-    function goTo(id: number, type: string) {
+    function goTo(id: string|number, type: string) {
         router.push(`/${type}/${id}`);
     }
 

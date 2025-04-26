@@ -52,11 +52,32 @@ export default function MovieIndex() {
     };
 
     const updateResults = (query: string) => {
+        if(query.trim().length === 0) {
+            setResults(null);
+            document.title = "Movieslay (Emerald) | Search";
+            const url = new URL(window.location.href);
+            url.searchParams.delete('query');
+            window.history.pushState({}, '', url);
+            return;
+        }
         console.log('Querying for ' + query);
+        const url = new URL(window.location.href);
+        url.searchParams.set('query', query);
+        window.history.pushState({}, '', url);
+        document.title = `Movieslay (Emerald) | Search: ${query}`;
         getSearch(query).then((data) => {
             setResults(data);
         });
     };
+
+    useEffect(() => {
+        document.title = "Movieslay (Emerald) | Search";
+        const query = new URLSearchParams(window.location.search).get('query');
+        if (query) {
+            setSearch(query);
+            updateResults(query);
+        }
+    }, []);
 
     return (
         <PageLayout title="Search">
@@ -83,7 +104,7 @@ export default function MovieIndex() {
                     <Button variant="outlined" color="primary" onClick={() => { updateResults(search) }} startDecorator={<i className="fa-solid fa-magnifying-glass" />}>Search</Button>
                 </div>
                 <div className="full-w" style={{ height: '20px' }}></div>
-                <span>{search ? <>Search results for <b>{search}</b>:</> : <>Start typing to see results</>}</span>
+                <span>{search ? <>Search results for <b>{search}</b>:</> : <span>Start typing to see results</span>}</span>
                 <div className="full-w" style={{ height: '20px' }}></div>
                 {results ? (
                     <>

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import sources from "@/app/components/Sources";
 import Head from "next/head";
 import Controls from "@/app/components/controls";
+import useRecentlyWatched from "@/app/data/RecentlyWatched";
 
 interface MovieProps {
     params: Promise<{ id: number, sid: number, eid: number }>;
@@ -196,9 +197,22 @@ export default function SeriesPage({ params }: MovieProps) {
         });
     }, [params]);
 
-    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc'>('vidsrc');
+    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');
+    const rw = useRecentlyWatched();
     useEffect(() => {
         if (show && season && epid) {
+            setTimeout(() => {
+                rw.addOrUpdateSeries({
+                    type: 'series',
+                    title: show.name,
+                    thumbnail: `https://image.tmdb.org/t/p/w342${show.poster_path}`,
+                    id: show.id,
+                    series: {
+                        season: season.season_number,
+                        episode: epid,
+                    },
+                });
+            }, 10000);
             const title = `${show.name} S${season.season_number}E${epid} - Movieslay`;
             const description = season.episodes[epid - 1]?.overview || 'Show details';
             const imageUrl = `https://image.tmdb.org/t/p/w342${show.poster_path}`;
@@ -267,7 +281,7 @@ export default function SeriesPage({ params }: MovieProps) {
                                 setFullscreen(false);
                             }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
-                        <iframe src={`${sources[source].series.replace('%id%', `${show?.id}`).replace('%sid%', `${season?.season_number}`).replace('%eid%', `${epid}`)}`} style={{ marginTop: `${fullscreen ? '2px' : undefined}` }}></iframe>
+                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].series.replace('%id%', `${show?.id}`).replace('%sid%', `${season?.season_number}`).replace('%eid%', `${epid}`)}`} style={{ marginTop: `${fullscreen ? '2px' : undefined}` }}></iframe>
                         <div className={`info-card flex align gap-1`}>
                             <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
                             <div className="flex flex-col justify details">
