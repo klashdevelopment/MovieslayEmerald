@@ -74,7 +74,7 @@ export default function AppPage() {
                     <span className="text-[3rem] font-semibold m-0">Downloads</span>
                     <div className="flex flex-row gap-[4px] mobileButtons">
                         <Button component={"a"} href="/app/movieslay-emerald-desktop.exe" download="movieslay-emerald-desktop.exe" target="_blank" startDecorator={<i className="fa-solid fab fa-windows"></i>}>Windows</Button>
-                        <Button disabled startDecorator={<i className="fa-solid fab fa-apple"></i>}>MacOS</Button>
+                        <Button component={"a"} href="/app/MEDesktopMac.dmg" download="MEDesktopMac.dmg" target="_blank" startDecorator={<i className="fa-solid fab fa-apple"></i>}>MacOS</Button>
                         <Button disabled startDecorator={<i className="fa-solid fab fa-linux"></i>}>Linux</Button>
                     </div>
                 </div>
