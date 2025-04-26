@@ -25,7 +25,7 @@ export default function PageLayout({
     useEffect(()=>{
         if(
             (navigator && navigator.userAgent.includes("Movieslay")) ||
-            (location.origin.includes('desktop.movieslay.com'))
+            (location.hostname.includes('desktop.movieslay.com'))
         ) {
             setIsDesktop(true);
         }
