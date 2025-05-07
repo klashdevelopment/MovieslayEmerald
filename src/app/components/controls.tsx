@@ -4,19 +4,23 @@ import React from "react";
 export default function Controls({
     fullscreen,
     setFullscreen,
-    source,
-    setSource,
+    source=null,
+    setSource=null,
     isMovie,
     nextEpisode=()=>{},
-    lastEpisode=()=>{}
+    lastEpisode=()=>{},
+    onCustomServerChange=null,
+    customServerNumber=0,
 }: {
     fullscreen: boolean;
     setFullscreen: any;
-    source: string|null;
-    setSource: any|null;
+    source?: string|null;
+    setSource?: any|null;
     isMovie: boolean;
     nextEpisode?: any;
     lastEpisode?: any;
+    onCustomServerChange?: ((amount: number) => void)|null;
+    customServerNumber?: string|number;
 }) {
     return <>
         <button className="server" onClick={() => {
@@ -36,6 +40,25 @@ export default function Controls({
                 </div>
             </div>
         </div>}
+        {onCustomServerChange && (
+            <div className="server light">
+                <div className="server-split">
+                    <div className="ss-item left-corners" onClick={()=>{
+                        onCustomServerChange(-1);
+                    }}>
+                        <i className="fa-solid fa-backward"></i>
+                    </div>
+                    <div className="ss-item not-button" style={{ width: '100%' }}>
+                        {customServerNumber}
+                    </div>
+                    <div className="ss-item right-corners" onClick={()=>{
+                        onCustomServerChange(1);
+                    }}>
+                        <i className="fa-solid fa-forward"></i>
+                    </div>
+                </div>
+            </div>
+        )}
         {(source && setSource) && (
             <div className="server light">
                 <div className="server-split">

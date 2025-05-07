@@ -44,6 +44,7 @@ export default function PageLayout({
                                 <b>Movieslay</b> {title ? `| ${title}` : ""}
                             </div>
                             <div className="nav-section media-options">
+                            <a onClick={()=>{router.push("/app")}} className="hide-on-desktop hide-on-desktopapp"><i className="fa-solid fa-grid-2"></i></a>
                                 <a onClick={()=>{router.push("/movie")}}><i className="fa-solid fa-camera-movie"></i> Movies</a>
                                 <a onClick={()=>{router.push("/series")}}><i className="fa-solid fa-clapperboard"></i>
                                     <span className="hide-on-mobile">Shows</span>

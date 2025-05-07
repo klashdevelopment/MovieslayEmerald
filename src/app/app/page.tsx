@@ -1,32 +1,21 @@
+"use client";
 import { Button, CssVarsProvider, Sheet } from "@mui/joy";
 import Image from "next/image";
 import PageLayout from "../components/PageLayout";
 import { BackgroundBeams } from "../components/aceternity/BackgroundBeams";
 import { SparklesCore } from "../components/aceternity/Sparkles";
 import { CardBody, CardItem, CardContainer } from "../components/aceternity/CardItem";
+import { useRouter } from "next/navigation";
 
 export default function AppPage() {
+    const router = useRouter();
     return (
         <PageLayout>
             <div className="flex flex-col align full-w h-90 gap-05 py-20">
                 <h1 className="relative z-10 text-lg md:text-7xl  bg-clip-text text-transparent bg-gradient-to-b from-blue-100 to-indigo-500  text-center font-sans font-bold">
                     Movieslay for Desktop
                 </h1>
-                <div className="w-[40rem] h-auto relative">
-                    <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-blue-200 to-transparent h-[2px] w-3/4 blur-sm" />
-                    <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-blue-200 to-transparent h-px w-3/4" />
-                    <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[5px] w-1/4 blur-sm" />
-                    <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-1/4" />
-                    {/* <SparklesCore
-                        background="transparent"
-                        minSize={0.4}
-                        maxSize={1}
-                        particleDensity={1200}
-                        className="w-full h-full"
-                        particleColor="#FFFFFF"
-                    /> */}
-                    <div className="absolute inset-0 w-full h-full bg-[#0b0d0e] [mask-image:radial-gradient(350px_200px_at_top,transparent_20%,white)]"></div>
-                </div>
+                <div className={'w-[4px] h-[40px]'}></div>
                 <div className="my-0 mb-10 flex flex-row align justify gap-05 mobileCards">
                     <CardContainer>
                         <CardBody className="bg-[url(/img19.jpg)] bg-cover bg-center relative group/card  dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[30rem] h-auto rounded-xl p-6 border  ">
@@ -75,7 +64,9 @@ export default function AppPage() {
                     <div className="flex flex-row gap-[4px] mobileButtons">
                         <Button component={"a"} href="/app/movieslay-emerald-desktop.exe" download="movieslay-emerald-desktop.exe" target="_blank" startDecorator={<i className="fa-solid fab fa-windows"></i>}>Windows</Button>
                         <Button component={"a"} href="/app/MEDesktopMac.dmg" download="MEDesktopMac.dmg" target="_blank" startDecorator={<i className="fa-solid fab fa-apple"></i>}>MacOS</Button>
-                        <Button disabled startDecorator={<i className="fa-solid fab fa-linux"></i>}>Linux</Button>
+                        <Button onClick={()=>{
+                            router.push('/app/ios');
+                        }} startDecorator={<i className="fa-solid fab fa-app-store"></i>}>iOS</Button>
                     </div>
                 </div>
             </div>

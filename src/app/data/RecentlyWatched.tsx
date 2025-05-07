@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 export interface RecentMedia {
-    type: 'movie' | 'series' | 'exclusive';
+    type: 'movie' | 'series' | 'exclusive' | 'sports';
     title: string;
     thumbnail: string;
     id: string|number;

@@ -85,7 +85,7 @@ export default function MovieIndex() {
                 <b>Our Favourites</b>
                 <div className="flex gap-1 movie-list">
                     {exclusives.map((movie) => (
-                        <div key={movie.id} className={`movie-card`} onClick={()=>{goTo(movie.link, 'exclusive')}}>
+                        <div key={movie.id} className={`movie-card`} onClick={()=>{goTo(movie.link, 'exclusives')}}>
                             <img src={`${movie.image}`} alt={movie.title} />
                             <span>{movie.title}</span>
                         </div>
