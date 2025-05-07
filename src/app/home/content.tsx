@@ -43,14 +43,19 @@ export default function Homecontent() {
                 <b>Recently Watched</b>
                 <div className="flex gap-1 movie-list">
                     {rw.recentlyWatched.map((media, index) => (
-                        <div key={index} className="movie-card relative" onClick={() => goToMedia(media)}>
-                            {media.type === 'series' && <><div className="movie-card-overlay z-[31]">
+                        <>
+                        <div key={index} className="movie-card relative">
+                            <div className="remove-recent" onClick={()=>{
+                                rw.removeMedia(media.id);
+                            }}><i className="fa-solid fa-x"></i></div>
+                            {media.type === 'series' && <><div onClick={() => goToMedia(media)} className="movie-card-overlay z-[31]">
                                 <b>S{media.series?.season}</b>
                                 <b>E{media.series?.episode}</b>
                             </div></>}
-                            <img src={media.thumbnail} alt={media.title} loading={"lazy"} />
+                            <img onClick={() => goToMedia(media)} src={media.thumbnail} alt={media.title} loading={"lazy"} />
                             <span>{media.title}</span>
                         </div>
+                        </>
                     ))}
                 </div>
             </>}

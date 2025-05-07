@@ -31,6 +31,18 @@ export default function useRecentlyWatched() {
         }
     }, []);
 
+    function removeMedia(id: string|number) {
+        setRecentlyWatched((prev: RecentMedia[]) => {
+            const newList = prev.filter((m) => m.id !== id);
+            try {
+                localStorage.setItem('recentlyWatched', JSON.stringify(newList));
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
+            return newList;
+        });
+    }
+
     function addMedia(media: RecentMedia) {
         if (media.type === 'movie') {
             setRecentlyWatched((prev: RecentMedia[]) => {
@@ -86,5 +98,5 @@ export default function useRecentlyWatched() {
         });
     }
 
-    return { recentlyWatched, addMedia, updateMediaByID, addOrUpdateSeries };
+    return { recentlyWatched, addMedia, updateMediaByID, addOrUpdateSeries, removeMedia };
 }

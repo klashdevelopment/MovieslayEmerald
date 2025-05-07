@@ -96,14 +96,14 @@ export default function SeriesPage({ params }: MovieProps) {
     }
     useEffect(() => {
         if (sport) {
-            setTimeout(() => {
-                rw.addMedia({
-                    type: 'sports',
-                    title: sport.name,
-                    thumbnail: formatPoster(sport.poster),
-                    id: sport.id
-                });
-            }, 10000);
+            // setTimeout(() => {
+            //     rw.addMedia({
+            //         type: 'sports',
+            //         title: sport.name,
+            //         thumbnail: formatPoster(sport.poster),
+            //         id: sport.id
+            //     });
+            // }, 10000);
             const title = `${sport?.title} - Movieslay`;
             const description = 'Show details';
             const imageUrl = sport.poster;
