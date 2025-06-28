@@ -99,4 +99,4 @@ export default function useRecentlyWatched() {
     }
 
     return { recentlyWatched, addMedia, updateMediaByID, addOrUpdateSeries, removeMedia };
-}
+} // 
