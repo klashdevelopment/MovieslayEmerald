@@ -52,6 +52,17 @@ export default function SeriesPage({ params }: MovieProps) {
     const [crew, setCrew] = useState<TMDBPersonCreditMedia[]>([]);
     const [failed, setFailed] = useState(false);
 
+    const removeDuplicates = (array: any) => {
+        const seenIds = new Set();
+        return array.filter((item: TMDBPersonCreditMedia) => {
+            if (seenIds.has(item.id)) {
+                return false;
+            }
+            seenIds.add(item.id);
+            return true;
+        });
+    };
+
     const router = useRouter();
 
     useEffect(() => {
@@ -69,8 +80,8 @@ export default function SeriesPage({ params }: MovieProps) {
                     setFailed(true);
                     return;
                 }
-                setCast(data.cast);
-                setCrew(data.crew);
+                setCast(removeDuplicates(data.cast));
+                setCrew(removeDuplicates(data.crew));
             });
         });
     }, [params]);
@@ -80,9 +91,9 @@ export default function SeriesPage({ params }: MovieProps) {
             const description = person.biography || 'Show details';
             const imageUrl = person.profile_path ? `https://image.tmdb.org/t/p/w780${person.profile_path}` : 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';
             const url = window.location.href;
-    
+
             document.title = title;
-    
+
             const metaTags = [
                 { name: "description", content: description },
                 { property: "og:title", content: title },
@@ -94,7 +105,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 { name: "twitter:description", content: description },
                 { name: "twitter:image", content: imageUrl },
             ];
-    
+
             metaTags.forEach(({ name, property, content }) => {
                 const meta = document.createElement("meta");
                 if (name) meta.name = name;
@@ -102,7 +113,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 meta.content = content;
                 document.head.appendChild(meta);
             });
-    
+
             return () => {
                 metaTags.forEach(({ name, property }) => {
                     const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
@@ -111,7 +122,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 });
             };
         }
-    }, [person]);    
+    }, [person]);
 
     return (
         <PageLayout title={`${person ? `${person.name}` : 'Person'}`}>
