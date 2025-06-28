@@ -11,7 +11,6 @@
   "dependencies": {
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
-    "@movie-web/providers": "https://github.com/p-stream/providers",
     "@mui/joy": "^5.0.0-beta.48",
     "@tsparticles/engine": "^3.8.1",
     "@tsparticles/react": "^3.0.0",

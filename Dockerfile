@@ -19,10 +19,15 @@ FROM base as build
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+# git
+# && \
+# apt-get clean && rm -rf /var/lib/apt/lists/*
+# "@movie-web/providers": "https://github.com/p-stream/providers/archive/refs/heads/production.tar.gz",
 
 # Install node modules
 COPY package-lock.json package.json ./
-RUN npm ci --include=dev
+RUN npm install -g pnpm
+RUN pnpm install --include=dev
 
 # Copy application code
 COPY . .
