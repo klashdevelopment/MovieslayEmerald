@@ -17,7 +17,7 @@ export default function SportsMatches({ params }: SportParams) {
             const sport = sportFromId(id);
             if (sport) {
                 setSport(sport);
-                fetch(`https://streamed.su/api/matches/${sport.id}`)
+                fetch(`https://streamed.pk/api/matches/${sport.id}`)
                     .then((res) => res.json())
                     .then((data) => {
                         setMatches(data);
@@ -62,7 +62,7 @@ export default function SportsMatches({ params }: SportParams) {
     function formatPoster(poster: string) {
         if(!poster) return `/sport/${sport?.id||'other'}.webp`;
         if(poster.startsWith('/')) {
-            return `https://streamed.su${poster}`;
+            return `https://streamed.pk${poster}`;
         } else {
             return poster;
         }

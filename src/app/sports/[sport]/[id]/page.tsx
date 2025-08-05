@@ -29,7 +29,7 @@ export default function SeriesPage({ params }: MovieProps) {
             setSportName(sporty);
             const sportz = sportFromId(sporty);
             if (sportz) {
-                fetch(`https://streamed.su/api/matches/${sportz.id}`)
+                fetch(`https://streamed.pk/api/matches/${sportz.id}`)
                     .then((res) => res.json())
                     .then((data) => {
                         setMatches(data);
@@ -71,7 +71,7 @@ export default function SeriesPage({ params }: MovieProps) {
 
     async function getSourceDatas(source: SportSource): Promise<SportSourceData[] | null> {
         if (!source) return null;
-        const res = await fetch(`https://streamed.su/api/stream/${source.source}/${source.id}`);
+        const res = await fetch(`https://streamed.pk/api/stream/${source.source}/${source.id}`);
         const data = await res.json();
         if (data && data.length > 0) {
             return data;
@@ -89,7 +89,7 @@ export default function SeriesPage({ params }: MovieProps) {
     function formatPoster(poster: string) {
         if(!poster||poster == undefined||poster==null||poster.length<1) return `/sport/${sportName||'other'}.webp`;
         if(poster.startsWith('/')) {
-            return `https://streamed.su${poster}`;
+            return `https://streamed.pk${poster}`;
         } else {
             return poster;
         }
