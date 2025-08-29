@@ -25,8 +25,9 @@ export default function PageLayout({
     useEffect(()=>{
         if(
             (navigator && navigator.userAgent.includes("Movieslay")) ||
-            (location.hostname.includes('desktop.movieslay.com'))
-        ) {
+            (location.hostname.includes('desktop.movieslay.com')) ||
+            (location.search.includes('desktopUI'))
+         ) {
             setIsDesktop(true);
         }
     }, []);
@@ -35,7 +36,7 @@ export default function PageLayout({
         router.push('/search');
     }
     return (
-        <>
+        <> 
             <CssVarsProvider defaultMode="dark">
                 <IsDesktopContext.Provider value={isDesktop}>
                     <Sheet variant={'outlined'} sx={{height: 'calc(100vh - 25px)', width: 'calc(100vw - 25px)', padding: '10px', boxSizing: 'border-box', borderRadius: '12px'}} className={"flex flex-col align" + (isDesktop ? " desktop-app-framed" : "")}>

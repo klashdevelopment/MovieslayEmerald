@@ -11,7 +11,7 @@ import { sports } from "../sports/Sports";
 
 export interface TMDBShow {
     id: number;
-    title: string;
+    name: string;
     overview: string;
     poster_path: string;
     adult: boolean;
@@ -34,6 +34,7 @@ export default function MovieIndex() {
     useEffect(() => {
         getMovies(1, 'discover-tv').then((data) => {
             setMovies(data.results);
+            console.log(data);
         });
         getMovies(1, 'trending-week-tv').then((data) => {
             setTrendingShows(data.results);
@@ -70,8 +71,8 @@ export default function MovieIndex() {
                 <div className="flex gap-1 movie-list">
                     {movies.map((movie) => (
                         <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { goTo(movie.id, 'series') }}>
-                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
-                            <span>{movie.title}</span>
+                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.name} />
+                            <span>{movie.name}</span>
                         </div>
                     ))}
                 </div>
@@ -80,8 +81,8 @@ export default function MovieIndex() {
                 <div className="flex gap-1 movie-list">
                     {trendingShows.map((movie) => (
                         <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { goTo(movie.id, 'series') }}>
-                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
-                            <span>{movie.title}</span>
+                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.name} />
+                            <span>{movie.name}</span>
                         </div>
                     ))}
                 </div>
