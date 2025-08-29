@@ -255,7 +255,7 @@ export default function SeriesPage({ params }: MovieProps) {
                                     Copy
                                 </button>
                                 <button className="server" onClick={() => {
-                                    window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'show like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);
+                                    window.open(`https://bsky.app/intent/compose?text=Watch%20${encodeURIComponent(show?.name || 'shows like this one')}%20on%20Movieslay:%20${encodeURIComponent(window.location.href)}`);
                                 }}>
                                     <i className="fa-solid fa-brands fa-bluesky"></i>
                                     Bluesky
