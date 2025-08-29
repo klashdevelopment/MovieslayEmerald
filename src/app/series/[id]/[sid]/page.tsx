@@ -232,7 +232,7 @@ export default function SeriesPage({ params }: MovieProps) {
             <PageLayout title={`${show ? `${show.name} ${season?.name}` : 'Show'}`}>
                 <div className="flex align flex-col gap-05 movie-page">
                     {failed ? <>
-                        <h1>Show not found.</h1>
+                        <h1>Show not found or missing info</h1>
                     </> : <>
                         <div className="info-card selection flex align gap-05 flex-col" style={{ marginTop: '8px', overflowY: 'auto', height: '65%' }}>
                             {season?.episodes.map(episode => (
