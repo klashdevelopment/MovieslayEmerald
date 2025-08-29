@@ -60,13 +60,15 @@ export default function AppPage() {
                 <p className="max-w-[1000px]">Movieslay Emerald for Desktop brings a refined experience for viewing your movies and shows from movieslay at ease. With built-in popup prevention, the desktop client ensures a seamless watching experience. Movieslay Desktop also ensures a clean user interface to fit in with movieslay's style and seamless fullscreen and picture in picture integration.</p>
 
                 <div className="flex flex-col gap-1 mt-5 align pb-10">
-                    <span className="text-[3rem] font-semibold m-0">Downloads</span>
+                    <span className="text-[3rem] font-semibold m-0">App Downloads</span>
                     <div className="flex flex-row gap-[4px] mobileButtons">
                         <Button component={"a"} href="/app/movieslay-emerald-desktop.exe" download="movieslay-emerald-desktop.exe" target="_blank" startDecorator={<i className="fa-solid fab fa-windows"></i>}>Windows</Button>
                         <Button component={"a"} href="/app/MEDesktopMac.dmg" download="MEDesktopMac.dmg" target="_blank" startDecorator={<i className="fa-solid fab fa-apple"></i>}>MacOS</Button>
+                        <Button component={"a"} disabled startDecorator={<i className="fa-solid fab fa-linux"></i>}>Linux</Button>
                         <Button onClick={()=>{
                             router.push('/app/ios');
                         }} startDecorator={<i className="fa-solid fab fa-app-store"></i>}>iOS</Button>
+                        <Button disabled startDecorator={<i className="fa-solid fab fa-android"></i>}>Android</Button>
                     </div>
                 </div>
             </div>
