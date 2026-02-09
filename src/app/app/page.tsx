@@ -57,7 +57,8 @@ export default function AppPage() {
                         </CardBody>
                     </CardContainer>
                 </div>
-                <p className="max-w-[1000px]">Movieslay Emerald for Desktop brings a refined experience for viewing your movies and shows from movieslay at ease. With built-in popup prevention, the desktop client ensures a seamless watching experience. Movieslay Desktop also ensures a clean user interface to fit in with movieslay's style and seamless fullscreen and picture in picture integration.</p>
+                <p className="max-w-[1000px] text-center">Movieslay Emerald for Desktop brings a refined experience for viewing your movies and shows from movieslay at ease. With built-in popup prevention, the desktop client ensures a seamless watching experience. Movieslay Desktop also ensures a clean user interface to fit in with movieslay's style and seamless fullscreen and picture in picture integration.</p>
+                <p className="max-w-[1000px]"><b>Two great apps</b> in one: Bundled with <b>Mediaslay Desktop</b> for your own music & video. Built in .NET</p>
 
                 <div className="flex flex-col gap-1 mt-5 align pb-10">
                     <span className="text-[3rem] font-semibold m-0">App Downloads</span>
