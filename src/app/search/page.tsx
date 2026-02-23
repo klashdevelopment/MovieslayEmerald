@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getMovies, getSearch } from "../components/useTMDB";
 import { useRouter } from "next/navigation";
 import { getNameOrTitle, Person, SearchResults, TVShow } from "../api/get-movies/search-types";
+import { sendToHost } from "../utils/WebViewUtil";
 
 export interface TMDBMovie {
     id: number;
@@ -34,7 +35,7 @@ export default function MovieIndex() {
     const router = useRouter();
 
     function goTo(id: number, type: string) {
-        router.push(`/${type.replaceAll('tv','series')}/${id}`);
+        router.push(`/${type.replaceAll('tv', 'series')}/${id}`);
     }
 
     const [search, setSearch] = useState<string>('');
@@ -52,7 +53,7 @@ export default function MovieIndex() {
     };
 
     const updateResults = (query: string) => {
-        if(query.trim().length === 0) {
+        if (query.trim().length === 0) {
             setResults(null);
             document.title = "Movieslay (Emerald) | Search";
             const url = new URL(window.location.href);
@@ -77,6 +78,13 @@ export default function MovieIndex() {
             setSearch(query);
             updateResults(query);
         }
+
+        sendToHost({
+            type: "presenceUpdate",
+            from: "movieslay",
+            state: `Searching movies and shows on Movieslay Emerald`,
+            details: `Searching for movies, tv shows, and people.`
+        })
     }, []);
 
     return (
@@ -128,12 +136,12 @@ export default function MovieIndex() {
                         </div>
                         <h2>People</h2>
                         <div className="flex gap-1 movie-list">
-                        {results?.results.filter(r => r.media_type === 'person').map((result) => (
-                            <div key={(result as Person).id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo((result as Person).id, (result as Person).media_type) }}>
-                                <img src={(result as Person).profile_path == null ? 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png' : `https://image.tmdb.org/t/p/w342${(result as Person).profile_path}`} alt={(result as Person).name} />
-                                <span>{(result as Person).name}</span>
-                            </div>
-                        ))}
+                            {results?.results.filter(r => r.media_type === 'person').map((result) => (
+                                <div key={(result as Person).id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo((result as Person).id, (result as Person).media_type) }}>
+                                    <img src={(result as Person).profile_path == null ? 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png' : `https://image.tmdb.org/t/p/w342${(result as Person).profile_path}`} alt={(result as Person).name} />
+                                    <span>{(result as Person).name}</span>
+                                </div>
+                            ))}
                         </div>
                     </>
                 ) : (<></>)

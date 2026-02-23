@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Genre } from "../movie/page";
 import exclusives from "../components/Exclusives";
 import { sports } from "../sports/Sports";
+import { sendToHost } from "../utils/WebViewUtil";
 
 export interface TMDBShow {
     id: number;
@@ -42,6 +43,14 @@ export default function MovieIndex() {
         getMovies(1, 'genres-tv').then((data) => {
             setGenres(data.genres);
         });
+
+
+        sendToHost({
+            type: "presenceUpdate",
+            from: "movieslay",
+            state: `Browsing Shows`,
+            details: `Browsing shows on Movieslay`
+        })
     }, []);
 
     const router = useRouter();

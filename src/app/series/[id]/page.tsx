@@ -6,6 +6,7 @@ import { getMovies } from "@/app/components/useTMDB";
 import React from "react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
+import { sendToHost } from "@/app/utils/WebViewUtil";
 
 interface MovieProps {
     params: Promise<{ id: number }>;
@@ -115,6 +116,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
+                sendToHost({
+                    type: "presenceUpdate",
+                    from: "movieslay",
+                    state: `${data.name}`,
+                    details: `Selecting season for ${data.name} on Movieslay`
+                })
             });
         });
     }, [params]);
@@ -124,9 +131,9 @@ export default function SeriesPage({ params }: MovieProps) {
             const description = show.overview || 'Show details';
             const imageUrl = `https://image.tmdb.org/t/p/w342${show.poster_path}`;
             const url = window.location.href;
-    
+
             document.title = title;
-    
+
             const metaTags = [
                 { name: "description", content: description },
                 { property: "og:title", content: title },
@@ -138,7 +145,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 { name: "twitter:description", content: description },
                 { name: "twitter:image", content: imageUrl },
             ];
-    
+
             metaTags.forEach(({ name, property, content }) => {
                 const meta = document.createElement("meta");
                 if (name) meta.name = name;
@@ -146,7 +153,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 meta.content = content;
                 document.head.appendChild(meta);
             });
-    
+
             return () => {
                 metaTags.forEach(({ name, property }) => {
                     const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
@@ -155,7 +162,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 });
             };
         }
-    }, [show]);    
+    }, [show]);
 
     const router = useRouter();
 
@@ -166,9 +173,9 @@ export default function SeriesPage({ params }: MovieProps) {
                     {failed ? <>
                         <h1>Show not found.</h1>
                     </> : <>
-                        <div className="info-card selection flex align gap-05 flex-col" style={{marginTop: '8px',overflowY:'auto',height: '65%'}}>
+                        <div className="info-card selection flex align gap-05 flex-col" style={{ marginTop: '8px', overflowY: 'auto', height: '65%' }}>
                             {show?.seasons.map(season => (
-                                <button key={season.id} className="server" onClick={()=>{router.push(`/series/${show?.id}/${season.season_number}`)}} style={{width: '100%'}}>{season.season_number}. {season.name} ({season.episode_count} episodes)</button>
+                                <button key={season.id} className="server" onClick={() => { router.push(`/series/${show?.id}/${season.season_number}`) }} style={{ width: '100%' }}>{season.season_number}. {season.name} ({season.episode_count} episodes)</button>
                             ))}
                         </div>
                         <div className="info-card flex align gap-1">

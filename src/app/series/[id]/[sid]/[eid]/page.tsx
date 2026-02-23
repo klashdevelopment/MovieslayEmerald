@@ -9,6 +9,7 @@ import sources from "@/app/components/Sources";
 import Head from "next/head";
 import Controls from "@/app/components/controls";
 import useRecentlyWatched from "@/app/data/RecentlyWatched";
+import { sendToHost } from "@/app/utils/WebViewUtil";
 
 interface MovieProps {
     params: Promise<{ id: number, sid: number, eid: number }>;
@@ -183,6 +184,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
+                sendToHost({
+                    type: "presenceUpdate",
+                    from: "movieslay",
+                    state: `${data.name} S${sid}E${eid}`,
+                    details: `Watching ${data.name} on Movieslay`
+                })
             });
 
             if (failed) return;

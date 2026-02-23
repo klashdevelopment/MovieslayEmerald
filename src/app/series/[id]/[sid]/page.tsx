@@ -6,6 +6,7 @@ import { getMovies, getSeasonData } from "@/app/components/useTMDB";
 import React from "react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
+import { sendToHost } from "@/app/utils/WebViewUtil";
 
 interface MovieProps {
     params: Promise<{ id: number, sid: number }>;
@@ -175,6 +176,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
+                sendToHost({
+                    type: "presenceUpdate",
+                    from: "movieslay",
+                    state: `${data.name} - S${sid}`,
+                    details: `Selecting episode for ${data.name} S${sid} on Movieslay`
+                })
             });
 
             if (failed) return;
@@ -194,9 +201,9 @@ export default function SeriesPage({ params }: MovieProps) {
             const description = season.overview || 'Show details';
             const imageUrl = `https://image.tmdb.org/t/p/w342${show.poster_path}`;
             const url = window.location.href;
-    
+
             document.title = title;
-    
+
             const metaTags = [
                 { name: "description", content: description },
                 { property: "og:title", content: title },
@@ -208,7 +215,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 { name: "twitter:description", content: description },
                 { name: "twitter:image", content: imageUrl },
             ];
-    
+
             metaTags.forEach(({ name, property, content }) => {
                 const meta = document.createElement("meta");
                 if (name) meta.name = name;
@@ -216,7 +223,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 meta.content = content;
                 document.head.appendChild(meta);
             });
-    
+
             return () => {
                 metaTags.forEach(({ name, property }) => {
                     const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
@@ -225,7 +232,7 @@ export default function SeriesPage({ params }: MovieProps) {
                 });
             };
         }
-    }, [show, season]);    
+    }, [show, season]);
 
     return (
         <>
@@ -236,7 +243,7 @@ export default function SeriesPage({ params }: MovieProps) {
                     </> : <>
                         <div className="info-card selection flex align gap-05 flex-col" style={{ marginTop: '8px', overflowY: 'auto', height: '65%' }}>
                             {season?.episodes.map(episode => (
-                                <button key={episode.id} className="server" onClick={()=>{router.push(`/series/${show?.id}/${season.season_number}/${episode.episode_number}`)}} style={{width: '100%'}}>{episode.episode_number}. {episode.name}</button>
+                                <button key={episode.id} className="server" onClick={() => { router.push(`/series/${show?.id}/${season.season_number}/${episode.episode_number}`) }} style={{ width: '100%' }}>{episode.episode_number}. {episode.name}</button>
                             ))}
                         </div>
                         <div className="info-card flex align gap-1">
