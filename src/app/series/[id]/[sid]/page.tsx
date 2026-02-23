@@ -176,12 +176,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
-                sendToHost({
+                setInterval(() => sendToHost({
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `${data.name} - S${sid}`,
                     details: `Selecting episode for ${data.name} S${sid} on Movieslay`
-                })
+                }), 10000);
             });
 
             if (failed) return;

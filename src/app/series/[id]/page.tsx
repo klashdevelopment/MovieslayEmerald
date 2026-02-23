@@ -116,12 +116,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
-                sendToHost({
+                setInterval(() => sendToHost({
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `${data.name}`,
                     details: `Selecting season for ${data.name} on Movieslay`
-                })
+                 }), 10000);
             });
         });
     }, [params]);

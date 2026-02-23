@@ -184,12 +184,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
-                sendToHost({
+                setInterval(() => sendToHost({
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `${data.name} S${sid}E${eid}`,
                     details: `Watching ${data.name} on Movieslay`
-                })
+                 }), 10000);
             });
 
             if (failed) return;

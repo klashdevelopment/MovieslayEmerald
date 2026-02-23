@@ -45,12 +45,12 @@ export default function MovieIndex() {
         });
 
 
-        sendToHost({
+        setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Browsing Shows`,
             details: `Browsing shows on Movieslay`
-        })
+        }), 10000);
     }, []);
 
     const router = useRouter();

@@ -30,12 +30,12 @@ export default function MoviePage({ params }: MovieProps) {
                     return;
                 }
                 setMovie(data);
-                sendToHost({
+                setInterval(() => sendToHost({ 
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `Watching ${data.title}`,
                     details: `Watching ${data.title} on Movieslay`
-                })
+                }), 10000);
             });
         });
     }, [params]);

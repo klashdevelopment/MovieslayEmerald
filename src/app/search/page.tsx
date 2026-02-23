@@ -79,12 +79,12 @@ export default function MovieIndex() {
             updateResults(query);
         }
 
-        sendToHost({
+        setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Searching movies and shows on Movieslay Emerald`,
             details: `Searching for movies, tv shows, and people.`
-        })
+         }), 10000);
     }, []);
 
     return (
