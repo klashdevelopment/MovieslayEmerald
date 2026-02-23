@@ -169,6 +169,7 @@ export default function SeriesPage({ params }: MovieProps) {
     const router = useRouter();
 
     useEffect(() => {
+        let presenceInterval: number | null = null;
         params.then(({ id, sid }) => {
             getMovies(id, 'tv').then(data => {
                 if (data.success === false) {
@@ -176,7 +177,7 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
-                setInterval(() => sendToHost({
+                presenceInterval = window.setInterval(() => sendToHost({
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `${data.name} - S${sid}`,
@@ -194,6 +195,10 @@ export default function SeriesPage({ params }: MovieProps) {
                 setSeason(data);
             });
         });
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, [params]);
     useEffect(() => {
         if (show && season) {

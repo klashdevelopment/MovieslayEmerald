@@ -26,12 +26,17 @@ export default function Homecontent() {
     }
 
     useEffect(() => {
-        setInterval(() => sendToHost({
+        let presenceInterval: number | null = null;
+        presenceInterval = window.setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Browsing recently watched`,
             details: `Home page of Movieslay Emerald`
         }), 10000);
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, []);
 
         return <>

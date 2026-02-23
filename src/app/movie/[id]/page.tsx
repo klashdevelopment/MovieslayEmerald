@@ -23,6 +23,7 @@ export default function MoviePage({ params }: MovieProps) {
     const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');
 
     useEffect(() => {
+        let presenceInterval: number | null = null;
         params.then(({ id }) => {
             getMovies(id, 'movie').then(data => {
                 if (data.success === false) {
@@ -30,7 +31,7 @@ export default function MoviePage({ params }: MovieProps) {
                     return;
                 }
                 setMovie(data);
-                setInterval(() => sendToHost({ 
+                presenceInterval = window.setInterval(() => sendToHost({ 
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `Watching ${data.title}`,
@@ -38,6 +39,10 @@ export default function MoviePage({ params }: MovieProps) {
                 }), 10000);
             });
         });
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, [params]);
     const rw = useRecentlyWatched();
     useEffect(() => {

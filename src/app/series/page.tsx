@@ -45,12 +45,17 @@ export default function MovieIndex() {
         });
 
 
-        setInterval(() => sendToHost({
+        let presenceInterval: number | null = null;
+        presenceInterval = window.setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Browsing Shows`,
             details: `Browsing shows on Movieslay`
         }), 10000);
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, []);
 
     const router = useRouter();

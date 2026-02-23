@@ -176,6 +176,7 @@ export default function SeriesPage({ params }: MovieProps) {
     const router = useRouter();
 
     useEffect(() => {
+        let presenceInterval: number | null = null;
         params.then(({ id, sid, eid }) => {
             setEpid(eid);
             getMovies(id, 'tv').then(data => {
@@ -184,12 +185,12 @@ export default function SeriesPage({ params }: MovieProps) {
                     return;
                 }
                 setShow(data);
-                setInterval(() => sendToHost({
+                presenceInterval = window.setInterval(() => sendToHost({
                     type: "presenceUpdate",
                     from: "movieslay",
                     state: `${data.name} S${sid}E${eid}`,
                     details: `Watching ${data.name} on Movieslay`
-                 }), 10000);
+                }), 10000);
             });
 
             if (failed) return;
@@ -202,6 +203,10 @@ export default function SeriesPage({ params }: MovieProps) {
                 setSeason(data);
             });
         });
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, [params]);
 
     const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');

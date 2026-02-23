@@ -44,12 +44,17 @@ export default function MovieIndex() {
         getMovies(1, 'genres').then((data) => {
             setGenres(data.genres);
         });
-        setInterval(() => sendToHost({
+        let presenceInterval: number | null = null;
+        presenceInterval = window.setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Browsing Movies`,
             details: `Browsing movies on Movieslay`
         }), 10000);
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, []);
 
     const router = useRouter();

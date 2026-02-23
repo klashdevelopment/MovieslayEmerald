@@ -79,12 +79,17 @@ export default function MovieIndex() {
             updateResults(query);
         }
 
-        setInterval(() => sendToHost({
+        let presenceInterval: number | null = null;
+        presenceInterval = window.setInterval(() => sendToHost({
             type: "presenceUpdate",
             from: "movieslay",
             state: `Searching movies and shows on Movieslay Emerald`,
             details: `Searching for movies, tv shows, and people.`
          }), 10000);
+
+        return () => {
+            if (presenceInterval) window.clearInterval(presenceInterval);
+        };
     }, []);
 
     return (
