@@ -8,8 +8,8 @@ export const sources = {
         "movie": "https://player.smashystream.com/movie/%id%"
     },
     "vidsrc": {
-        "series": "https://vidsrc-embed.ru/embed/tv?tmdb=%id%&season=%sid%&episode=%eid%",
-        "movie": "https://vidsrc-embed.ru/embed/movie?tmdb=%id%"
+        "series": "https://vsembed.su/embed/tv?tmdb=%id%&season=%sid%&episode=%eid%",
+        "movie": "https://vsembed.su/embed/movie?tmdb=%id%"
     },
     "vsrc2": {
         "series": "https://vidsrc.cc/v2/embed/tv/%id%/%sid%/%eid%?autoPlay=true",

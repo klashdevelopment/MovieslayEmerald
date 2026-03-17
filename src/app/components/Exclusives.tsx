@@ -17,6 +17,14 @@ const exclusives: Exclusive[] = [
         link: 'designing-empires',
         id: "designing-empires",
         type: "series"
+    },
+    {
+        title: "Nirvanna: The Band - the Show - the Movie",
+        description: "Matt and Jay's plan to book a show at the Rivoli goes horribly wrong, resulting in them accidentally travelling back to the year 2008.",
+        image: "https://www.themoviedb.org/t/p/w1280/rmaQL7IFFXeeU33ztEN0z5ucHDy.jpg",
+        link: 'nirvanna-tb-ts-tm',
+        id: "nirvanna-tb-ts-tm",
+        type: "movie"
     }
 ];
 export default exclusives;
