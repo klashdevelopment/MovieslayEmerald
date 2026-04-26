@@ -25,14 +25,6 @@ const exclusives: Exclusive[] = [
         link: 'nirvanna-tb-ts-tm',
         id: "nirvanna-tb-ts-tm",
         type: "movie"
-    },
-    {
-        title: "Project Hail Mary [HD]",
-        description: "Ryland Grace wakes up alone on a spaceship, with no memory of how he got there. As his memories slowly return, he realizes he's on a mission to save humanity from an extinction-level threat. This exclusive combines the best audio and best video we could find - please give the media up to a minute to load.",
-        image: "https://image.tmdb.org/t/p/w600_and_h900_face/huVzcVrlK8aiLd240ienleODvWl.jpg",
-        link: 'phm-hd',
-        id: "phm-hd",
-        type: "movie"
     }
 ];
 export default exclusives;

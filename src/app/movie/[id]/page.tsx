@@ -20,7 +20,7 @@ export default function MoviePage({ params }: MovieProps) {
     const [fullscreen, setFullscreen] = useState(false);
     const isDesktop = useIsDesktop();
 
-    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');
+    const [source, setSource] = useState<(keyof typeof sources)>(Object.keys(sources)[0]);
 
     useEffect(() => {
         let presenceInterval: number | null = null;

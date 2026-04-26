@@ -66,10 +66,15 @@ export default function AppPage() {
                         <Button component={"a"} href="/app/movieslay-emerald-desktop.exe" download="movieslay-emerald-desktop.exe" target="_blank" startDecorator={<i className="fa-solid fab fa-windows"></i>}>Windows</Button>
                         <Button component={"a"} href="/app/MEDesktopMac.dmg" download="MEDesktopMac.dmg" target="_blank" startDecorator={<i className="fa-solid fab fa-apple"></i>}>MacOS</Button>
                         <Button component={"a"} disabled startDecorator={<i className="fa-solid fab fa-linux"></i>}>Linux</Button>
-                        <Button onClick={()=>{
+                        <Button onClick={() => {
                             router.push('/app/ios');
                         }} startDecorator={<i className="fa-solid fab fa-app-store"></i>}>iOS</Button>
                         <Button disabled startDecorator={<i className="fa-solid fab fa-android"></i>}>Android</Button>
+                        <span style={{ width: '8px', height: '8px' }}>
+                        </span>
+                        <Button onClick={() => {
+                            window.open('https://discord.gg/Smb9wMWadU', '_blank', 'noopener,noreferrer');
+                        }}><i className="fa-solid fab fa-discord"></i></Button>
                     </div>
                 </div>
             </div>

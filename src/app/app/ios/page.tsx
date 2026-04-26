@@ -25,7 +25,7 @@ export default function AppPage() {
                 <span>Click the button below to install the DNS profile required</span>
                 <span>to prevent Apple from revoking (uninstalling) the app.</span>
                 <Gap />
-                <Button startDecorator={FAI("screwdriver-wrench")} href="https://github.com/Nyasami/getUDID-JS/releases/download/1.0.0/signed_khoindvn_fullchain.mobileconfig" component={"a"}>Install DNS Profile</Button>
+                <Button startDecorator={FAI("screwdriver-wrench")} href="https://github.com/dns-khoindvn/top-country-stats/releases/download/DNS/khoindvn.io.vn.mobileconfig" component={"a"}>Install DNS Profile</Button>
                 <Gap />
                 <span>Once opened, open the <b>Settings</b> app and navigate to:</span>
                 <span>General &gt; VPN, DNS, Device Management</span>

@@ -209,7 +209,7 @@ export default function SeriesPage({ params }: MovieProps) {
         };
     }, [params]);
 
-    const [source, setSource] = useState<'2embed' | 'smashy' | 'vidsrc' | 'vsrc2'>('vidsrc');
+    const [source, setSource] = useState<(keyof typeof sources)>(Object.keys(sources)[0]);
     const rw = useRecentlyWatched();
     useEffect(() => {
         if (show && season && epid) {

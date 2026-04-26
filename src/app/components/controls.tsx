@@ -1,5 +1,6 @@
 import { Tooltip } from "@mui/joy";
 import React from "react";
+import sources from "./Sources";
 
 export default function Controls({
     fullscreen,
@@ -14,7 +15,7 @@ export default function Controls({
 }: {
     fullscreen: boolean;
     setFullscreen: any;
-    source?: string|null;
+    source?: (keyof typeof sources)|null;
     setSource?: any|null;
     isMovie: boolean;
     nextEpisode?: any;
@@ -62,26 +63,30 @@ export default function Controls({
         {(source && setSource) && (
             <div className="server light">
                 <div className="server-split">
-                    <Tooltip title="VSrc1 (Best)" className={`ss-item left-corners ${source == 'vidsrc' && 'active'}`} onClick={() => {
-                        setSource('vidsrc');
-                    }}>
-                        <i className="fa-solid fa-dice-one"></i>
-                    </Tooltip>
-                    <Tooltip title="2Embed (Third best)" className={`ss-item ${source == '2embed' && 'active'}`} onClick={() => {
-                        setSource('2embed');
-                    }}>
-                        <i className="fa-solid fa-dice-two"></i>
-                    </Tooltip>
-                    <Tooltip title="Smashy (Bad popups)" className={`ss-item ${source == 'smashy' && 'active'}`} onClick={() => {
-                        setSource('smashy');
-                    }}>
-                        <i className="fa-solid fa-dice-three"></i>
-                    </Tooltip>
-                    <Tooltip title="VSrc2 (Reccomended)" className={`ss-item right-corners ${source == 'vsrc2' && 'active'}`} onClick={() => {
-                        setSource('vsrc2');
-                    }}>
-                        <i className="fa-solid fa-dice-four"></i>
-                    </Tooltip>
+                    {Object.keys(sources).slice(0, 4).map((key, i) => (
+                        <Tooltip title={sources[key].tooltip} className={`ss-item
+                            ${i===3 && 'right-corners'}
+                            ${i===0 && 'left-corners'} ${source == key && 'active'}`} onClick={() => {
+                            setSource(key);
+                        }}>
+                            <i className={`fa-solid fa-dice-${['one', 'two', 'three', 'four'][i]}`}></i>
+                        </Tooltip>
+                        // <Tooltip title="2Embed (Third best)" className={`ss-item ${source == '2embed' && 'active'}`} onClick={() => {
+                        //     setSource('2embed');
+                        // }}>
+                        //     <i className="fa-solid fa-dice-two"></i>
+                        // </Tooltip>
+                        // <Tooltip title="Smashy (Bad popups)" className={`ss-item ${source == 'smashy' && 'active'}`} onClick={() => {
+                        //     setSource('smashy');
+                        // }}>
+                        //     <i className="fa-solid fa-dice-three"></i>
+                        // </Tooltip>
+                        // <Tooltip title="VSrc2 (Reccomended)" className={`ss-item right-corners ${source == 'vsrc2' && 'active'}`} onClick={() => {
+                        //     setSource('vsrc2');
+                        // }}>
+                        //     <i className="fa-solid fa-dice-four"></i>
+                        // </Tooltip>
+                    ))}
                 </div>
             </div>
         )}
