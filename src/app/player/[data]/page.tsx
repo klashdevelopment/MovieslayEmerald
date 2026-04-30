@@ -33,6 +33,7 @@ export default function PlayerPage({ params }: MovieProps) {
     const [currentStream, setCurrentStream] = useState<{ type: string; url: string } | null>(null);
 
     async function fetchContent() {
+        let stream = null;
         // 1. febbox
         let febbox;
         const name = (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) || "";
@@ -46,14 +47,14 @@ export default function PlayerPage({ params }: MovieProps) {
                 playerData?.episode
             );
             setFinalData({ from: "febbox", data: febbox });
-            setCurrentStream(febbox.streams['1080P'] || febbox.streams['720P'] || febbox.streams['360P'] || febbox.streams[Object.keys(febbox.streams)[0]]); // Try 1080P, then 720P, then 360P, then whatever the first one is
+            stream = (febbox.streams['1080P'] || febbox.streams['720P'] || febbox.streams['360P'] || febbox.streams[Object.keys(febbox.streams)[0]]); // Try 1080P, then 720P, then 360P, then whatever the first one is
         } catch (err) {
             console.error("Failed to fetch from Febbox:", err);
         }
 
         // 2. anyembed (if febbox fails)
         let ae;
-        if (!febbox) {
+        if (!stream) {
             try {
                 // AE is down as im developing this
             } catch (err) {
@@ -62,21 +63,21 @@ export default function PlayerPage({ params }: MovieProps) {
         }
 
         let vidrock: any;
-        if (!febbox && !ae) {
+        if (!stream) {
             try {
                 const r = await VidrockAPI.search(playerData!.id, playerData!.type === "movie" ? "movie" : "tv", playerData!.season?.toString() || "1", playerData!.episode?.toString() || "1");
                 if (r) {
                     vidrock = r;
                     setFinalData({ from: "vidrock", data: vidrock });
                     /* Example: {"hls":[{"type":"hls","url":"https://storrrrrrm.site/stream/14ca22547a6db1ee/master.m3u8"},{"type":"hls","url":"https://hellstorm.lol/file1/937e8b49baabbf15efdaf2f0620f8100f4284e058a4b786caff3aef9f9b6a60d/master.m3u8"}],"mp4":{"360":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2F9f2a2b5f481c4c7c92df662dbf711443.mp4%3Fsign%3D64ff7b5ecfb700d05ef4b47fdb7b73c4%26t%3D1777565647"},"480":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2Fa5f087b5b7e564ab12736bb1a7df1b72.mp4%3Fsign%3D93f7f0ba218a34b54e6d660b8c2df9ca%26t%3D1777566669"},"1080":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2F8aa05bb22e0940adc12245783ca69e92.mp4%3Fsign%3D1d95094f596f9f8e95b364e98a7db76d%26t%3D1777567327"}}} */
-                    // prefer mp4 because the hls sources gay
+                    // 
                     if (vidrock.hls && vidrock.hls.length > 0) {
-                        setCurrentStream({ type: "hls", url: vidrock.hls[0].url }); // just take the first hls source if no mp4s are available
+                        stream = ({ type: "hls", url: vidrock.hls[0].url }); // just take the first hls source if no mp4s are available
                     } else if (vidrock.mp4) {
                         const resolutions = Object.keys(vidrock.mp4).map(r => parseInt(r)).sort((a, b) => b - a); // sort descending
                         for (const res of resolutions) {
                             if (vidrock.mp4[res]?.url) {
-                                setCurrentStream({ type: "mp4", url: vidrock.mp4[res].url });
+                                stream = ({ type: "mp4", url: vidrock.mp4[res].url });
                                 break;
                             }
                         }
@@ -87,9 +88,11 @@ export default function PlayerPage({ params }: MovieProps) {
             }
         }
 
-        if (!febbox && !ae && !vidrock) {
+        if (!febbox && !ae && !vidrock && !stream) {
             setError("Failed to fetch media from all sources");
         }
+
+        setCurrentStream(stream);
     }
 
     useEffect(() => {
