@@ -237,6 +237,9 @@ body {
     cursor: pointer;
     text-align: center;
 }
+.ss-item.movieslaysource {
+    padding: 0.36rem 0.75rem;
+}
 .server-split {
     width: 100%;
     display: flex;

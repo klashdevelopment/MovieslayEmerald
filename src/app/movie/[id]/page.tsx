@@ -105,7 +105,10 @@ export default function MoviePage({ params }: MovieProps) {
                                 setFullscreen(false);
                             }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
-                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].movie.replace('%id%', `${movie?.id}`)}`}></iframe>
+                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].movie.replace('%HOME_DATA%', `${btoa(JSON.stringify({
+                            id: movie?.id,
+                            type: 'movie'
+                        }))}`).replace('%id%', `${movie?.id}`)}`}></iframe>
                         <div className="info-card flex align gap-1">
                             <img src={`https://image.tmdb.org/t/p/w342${movie?.poster_path}`} />
                             <div className="flex flex-col justify details">

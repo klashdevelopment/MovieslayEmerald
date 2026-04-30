@@ -64,12 +64,16 @@ export default function Controls({
             <div className="server light">
                 <div className="server-split">
                     {Object.keys(sources).slice(0, 4).map((key, i) => (
-                        <Tooltip title={sources[key].tooltip} className={`ss-item
+                        <Tooltip title={sources[key].tooltip} className={`ss-item ${key==='movieslay' && 'movieslaysource'}
                             ${i===3 && 'right-corners'}
                             ${i===0 && 'left-corners'} ${source == key && 'active'}`} onClick={() => {
                             setSource(key);
                         }}>
-                            <i className={`fa-solid fa-dice-${['one', 'two', 'three', 'four'][i]}`}></i>
+                            {key!=='movieslay' ? <i className={`fa-solid fa-dice-${['one', 'two', 'three', 'four'][i]}`}></i> :
+                                <i>
+                                    <img src="/assets/source_icon.png" style={{width:'25px',height:'25px',margin:'0 auto'}} />
+                                </i>
+                            }
                         </Tooltip>
                         // <Tooltip title="2Embed (Third best)" className={`ss-item ${source == '2embed' && 'active'}`} onClick={() => {
                         //     setSource('2embed');

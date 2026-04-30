@@ -5,6 +5,11 @@ export const sources: {
         tooltip: string;
     };
 } = { // first 4 are displayed.
+    "movieslay": {
+        "series": "/player/%HOME_DATA%",
+        "movie": "/player/%HOME_DATA%",
+        "tooltip": "Movieslay (Best, ad-free, beta)"
+    },
     "111movies": {
         "series": "https://111movies.net/tv/%id%/%sid%/%eid%",
         "movie": "https://111movies.net/movie/%id%",

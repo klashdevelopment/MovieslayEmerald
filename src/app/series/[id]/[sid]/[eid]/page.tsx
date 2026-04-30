@@ -293,7 +293,12 @@ export default function SeriesPage({ params }: MovieProps) {
                                 setFullscreen(false);
                             }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
-                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].series.replace('%id%', `${show?.id}`).replace('%sid%', `${season?.season_number}`).replace('%eid%', `${epid}`)}`} style={{ marginTop: `${fullscreen ? '2px' : undefined}` }}></iframe>
+                        <iframe allowFullScreen rel="noopener noreferrer" src={`${sources[source].series.replace('%HOME_DATA%', `${btoa(JSON.stringify({
+                            id: show?.id,
+                            season: season?.season_number,
+                            episode: epid,
+                            type: 'series'
+                        }))}`).replace('%id%', `${show?.id}`).replace('%sid%', `${season?.season_number}`).replace('%eid%', `${epid}`)}`} style={{ marginTop: `${fullscreen ? '2px' : undefined}` }}></iframe>
                         <div className={`info-card flex align gap-1`}>
                             <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
                             <div className="flex flex-col justify details">
