@@ -6,6 +6,7 @@ import { TMDBShow } from "@/app/series/page";
 import { FebboxAPI, FebboxReply } from "@/app/utils/FebboxAPI";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
+import { VidrockAPI } from "@/app/utils/VidrockAPI";
 
 interface MovieProps {
     params: Promise<{ data: string }>;
@@ -25,7 +26,7 @@ export default function PlayerPage({ params }: MovieProps) {
     const [tmdbData, setTmdbData] = useState<TMDBMovie | TMDBShow | null>(null);
 
     const [finalData, setFinalData] = useState<{
-        from: "febbox" | "anyembed";
+        from: "febbox" | "anyembed" | "vidrock";
         data: FebboxReply | any; // AnyEmbed is still in heavy beta, so we'll implement it as needed in the future lol
     } | null>(null);
 
@@ -51,8 +52,43 @@ export default function PlayerPage({ params }: MovieProps) {
         }
 
         // 2. anyembed (if febbox fails)
+        let ae;
         if (!febbox) {
-            console.log("Febbox failed, try AnyEmbed now (TODO actually do that)");
+            try {
+                // AE is down as im developing this
+            } catch (err) {
+                console.error("Failed to fetch from AnyEmbed:", err);
+            }
+        }
+
+        let vidrock: any;
+        if (!febbox && !ae) {
+            try {
+                const r = await VidrockAPI.search(playerData!.id, playerData!.type === "movie" ? "movie" : "tv", playerData!.season?.toString() || "1", playerData!.episode?.toString() || "1");
+                if (r) {
+                    vidrock = r;
+                    setFinalData({ from: "vidrock", data: vidrock });
+                    /* Example: {"hls":[{"type":"hls","url":"https://storrrrrrm.site/stream/14ca22547a6db1ee/master.m3u8"},{"type":"hls","url":"https://hellstorm.lol/file1/937e8b49baabbf15efdaf2f0620f8100f4284e058a4b786caff3aef9f9b6a60d/master.m3u8"}],"mp4":{"360":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2F9f2a2b5f481c4c7c92df662dbf711443.mp4%3Fsign%3D64ff7b5ecfb700d05ef4b47fdb7b73c4%26t%3D1777565647"},"480":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2Fa5f087b5b7e564ab12736bb1a7df1b72.mp4%3Fsign%3D93f7f0ba218a34b54e6d660b8c2df9ca%26t%3D1777566669"},"1080":{"type":"mp4","url":"https://dreadnought.scp098.workers.dev/https%3A%2F%2Fbcdnxw.hakunaymatata.com%2Fconvert-h264%2F8aa05bb22e0940adc12245783ca69e92.mp4%3Fsign%3D1d95094f596f9f8e95b364e98a7db76d%26t%3D1777567327"}}} */
+                    // prefer mp4 because the hls sources gay
+                    if (vidrock.hls && vidrock.hls.length > 0) {
+                        setCurrentStream({ type: "hls", url: vidrock.hls[0].url }); // just take the first hls source if no mp4s are available
+                    } else if (vidrock.mp4) {
+                        const resolutions = Object.keys(vidrock.mp4).map(r => parseInt(r)).sort((a, b) => b - a); // sort descending
+                        for (const res of resolutions) {
+                            if (vidrock.mp4[res]?.url) {
+                                setCurrentStream({ type: "mp4", url: vidrock.mp4[res].url });
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch from Vidrock:", err);
+            }
+        }
+
+        if (!febbox && !ae && !vidrock) {
+            setError("Failed to fetch media from all sources");
         }
     }
 
@@ -124,7 +160,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 <p style={{ color: 'white', textAlign: 'center' }}>Loading your media...</p>
                 <span style={{ color: '#888', fontSize: '14px' }}><i>Mediaslay's ad-free player is in beta.</i></span>
             </div>}
-            {(finalData?.from === "febbox" && currentStream) && (
+            {(currentStream) && (
                 <div style={{ maxWidth: "100%", maxHeight: "100%", display: "flex" }}>
                     {currentStream?.type === "hls" ? (
                         <HLSPlayer {...videoProps} url={currentStream.url} />
