@@ -41,14 +41,14 @@ async function ensureToken(): Promise<string> {
 }
 
 // Maps your local proxy paths to upstream AnyEmbed paths.
-// GET /api/anyembed/stream/[id]    → /api/v1/stream/[id]
-// GET /api/anyembed/known-server   → /api/known-server
-// GET /api/anyembed/providers      → /api/providers
-// GET /api/anyembed/meta           → /api/meta
-// GET /api/anyembed/[...anything]  → pass-through
+// GET /api/anyembed-wrap/stream/[id]    → /api/v1/stream/[id]
+// GET /api/anyembed-wrap/known-server   → /api/known-server
+// GET /api/anyembed-wrap/providers      → /api/providers
+// GET /api/anyembed-wrap/meta           → /api/meta
+// GET /api/anyembed-wrap/[...anything]  → pass-through
 function resolveUpstreamPath(pathname: string): string {
-  // Strip the local proxy prefix, e.g. "/api/anyembed/stream/123" → "/stream/123"
-  const stripped = pathname.replace(/^\/api\/anyembed/, "");
+  // Strip the local proxy prefix, e.g. "/api/anyembed-wrap/stream/123" → "/stream/123"
+  const stripped = pathname.replace(/^\/api\/anyembed-wrap/, "");
   return stripped || "/";
 }
 

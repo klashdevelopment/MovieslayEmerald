@@ -1,4 +1,4 @@
-const BASE_URL = "/api/anyembed";
+const BASE_URL = "/api/anyembed-wrap";
 
 interface MetaParams {
   tmdbId?: string | number;
@@ -21,6 +21,25 @@ export class AnyEmbedAPI {
 
   async stream(mediaId: string | number): Promise<Response> {
     return this.get(`${BASE_URL}/api/v1/stream/${mediaId}`);
+  }
+
+  // add a route for proxy
+  //https://api.anyembed.xyz/api/proxy?url=URL&headers=%7B%22Origin%22%3A%22https%3A%2F%2Fflixcdn.cyou%22%2C%22Referer%22%3A%22https%3A%2F%2Fflixcdn.cyou%2F%22%2C%22User-Agent%22%3A%22Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%22%7D&origin=https%3A%2F%2F185.237.106.164&referer=https%3A%2F%2F185.237.106.164%2F
+  async proxy(url: string, headers?: Record<string, string>): Promise<Response> {
+    const params: Record<string, string> = { url };
+    if (headers) {
+      params.headers = JSON.stringify(headers);
+    }
+    return this.get(`${BASE_URL}/api/proxy`, params);
+  }
+
+  async genProxyURL(url: string, headers?: Record<string, string>): Promise<string> {
+    const params: Record<string, string> = { url };
+    if (headers) {
+      params.headers = JSON.stringify(headers);
+    }
+    const query = new URLSearchParams(params).toString();
+    return `/api/proxy?${query}`;
   }
 
   async knownServer(mediaId: string | number): Promise<Response> {
