@@ -115,6 +115,9 @@ export default function MoviePage({ params }: MovieProps) {
                                 <b>{movie?.title}</b>
                                 <p>{movie?.overview}</p>
                             </div>
+                            {/* <div className="flex flex-col mobile-details">
+                                <b>{movie?.title}</b>
+                            </div> */}
                             <div className="flex flex-col gap-05 justify servers">
                                 <Controls
                                     fullscreen={fullscreen}

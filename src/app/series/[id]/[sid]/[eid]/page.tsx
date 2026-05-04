@@ -305,6 +305,10 @@ export default function SeriesPage({ params }: MovieProps) {
                                 <b>{show?.name} - S{season?.season_number}E{epid}: {season?.episodes[epid - 1].name}</b>
                                 <p>{season?.episodes[epid - 1].overview}</p>
                             </div>
+                            {/* <div className="flex flex-col mobile-details">
+                                <b>{season?.season_number}</b>
+                                <b>{epid}</b>
+                            </div> */}
                             <div className="flex flex-col gap-05 justify servers">
                                 <Controls
                                     fullscreen={fullscreen}

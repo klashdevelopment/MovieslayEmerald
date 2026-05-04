@@ -2,6 +2,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 html,
 body {
     margin: 0;
@@ -15,30 +16,39 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .flex {
     display: flex;
 }
+
 .align {
     align-items: safe center;
 }
+
 .justify {
     justify-content: safe center;
 }
+
 .flex-col {
     flex-direction: column;
 }
+
 .full-w {
     width: 100%;
 }
+
 .h-90 {
     height: 90%;
 }
+
 .gap-1 {
     gap: 1rem;
 }
+
 .gap-05 {
     gap: 0.5rem;
 }
+
 .wavebg-one {
     overflow: hidden;
     border-radius: 12px;
@@ -49,16 +59,19 @@ body {
     width: 180px;
     flex-shrink: 0;
 }
+
 .movie-card img {
     width: 100%;
     transition: all 0.15s ease;
     border-radius: 12px;
     cursor: pointer;
 }
+
 .movie-card:hover img {
     transform: scale(1.05);
     box-shadow: 0 0 10px 5px #202025;
 }
+
 .movie-list {
     display: flex;
     gap: 1rem;
@@ -70,12 +83,14 @@ body {
     scrollbar-color: #202025 #111;
     user-select: none;
 }
+
 .movie-card span {
     display: block;
     font-size: 0.8rem;
     margin-top: 0.5rem;
     color: #aaa;
 }
+
 .list-list {
     overflow-y: auto;
     height: 100%;
@@ -84,6 +99,7 @@ body {
     scrollbar-width: none;
     user-select: none;
 }
+
 .wavebg-canvas {
     width: 100%;
     overflow: hidden;
@@ -94,6 +110,7 @@ body {
     width: 15%;
     flex-shrink: 0;
 }
+
 .media-options {
     display: flex;
     justify-content: center;
@@ -102,6 +119,7 @@ body {
     flex-shrink: 0;
     width: 70%;
 }
+
 .media-options a {
     text-decoration: none;
     color: white;
@@ -111,10 +129,12 @@ body {
     background-color: #202025;
     transition: all 0.3s;
 }
+
 .media-options a:hover {
     background-color: #404060;
     color: #eef;
 }
+
 .mini-options {
     display: flex;
     justify-content: center;
@@ -122,6 +142,7 @@ body {
     flex-shrink: 0;
     gap: 0.5rem;
 }
+
 .mini-options a {
     text-decoration: none;
     color: white;
@@ -131,13 +152,16 @@ body {
     background-color: #202025;
     transition: all 0.3s;
 }
+
 .movie-page {
     display: flex;
     gap: 1rem;
     width: 100%;
     height: 100%;
 }
-.movie-page iframe, .movie-page .movie-source {
+
+.movie-page iframe,
+.movie-page .movie-source {
     width: 100%;
     height: 60%;
     border-radius: 12px;
@@ -145,19 +169,25 @@ body {
     border: none;
     border: 1px solid #32383e50;
 }
+
 .ss-item.active {
     background: #252540;
 }
+
 .ss-item.active:hover {
     background: #353550;
 }
-.movie-page:not(.fullscreen) iframe, .movie-page:not(.fullscreen) .movie-source {
+
+.movie-page:not(.fullscreen) iframe,
+.movie-page:not(.fullscreen) .movie-source {
     margin-top: 20px;
 }
+
 .hover-game:hover {
     background: #ffffff20;
     cursor: pointer
 }
+
 .info-card {
     width: 100%;
     padding: 1rem;
@@ -170,18 +200,22 @@ body {
     justify-content: space-between;
     flex-shrink: 0;
 }
+
 .info-card.selection {
     flex-direction: column;
     justify-content: flex-start;
 }
+
 .info-card img {
     height: 100%;
     border: 2px solid #3a3f44;
     border-radius: 12px;
 }
+
 .servers {
     width: 300px;
 }
+
 .server {
     border-radius: 6px;
     display: flex;
@@ -191,19 +225,24 @@ body {
     padding: 0.4rem 0.75rem;
     transition: all 0.2s ease;
 }
+
 .server.light {
     display: flex;
     align-items: center;
     padding: 0;
     background: transparent !important;
 }
-.server:hover, .ss-item:not(.not-button):hover {
+
+.server:hover,
+.ss-item:not(.not-button):hover {
     background: #333;
 }
+
 .ss-item.not-button {
     background: #1a1a1a;
     cursor: default;
 }
+
 .media-options a {
     display: flex;
     align-items: center;
@@ -215,6 +254,7 @@ body {
 .hide-on-desktop {
     display: none !important;
 }
+
 .details {
     overflow-y: auto;
     height: 100%;
@@ -226,9 +266,11 @@ body {
     flex-direction: column;
     align-items: left;
 }
+
 .details * {
     max-width: 1200px;
 }
+
 .ss-item {
     background: #222;
     width: 50%;
@@ -237,19 +279,23 @@ body {
     cursor: pointer;
     text-align: center;
 }
+
 .ss-item.movieslaysource {
     padding: 0.36rem 0.75rem;
 }
+
 .server-split {
     width: 100%;
     display: flex;
     height: 100%;
     gap: 2px;
 }
+
 .left-corners {
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
 }
+
 .right-corners {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
@@ -278,65 +324,96 @@ body {
     color: white;
     text-shadow: -1px 1px 5px #000;
 }
+.info-card .mobile-details {
+    display: none;
+}
 
 @media (max-width: 768px) {
     .servers {
         width: 160px;
     }
+
     .movie-page iframe {
         width: 100%;
         height: 30%;
     }
+
     .content {
         width: 100%;
     }
+
     .hide-on-mobile {
         display: none !important;
     }
+
     .media-options {
         width: 100%;
     }
+
     .movie-card {
         width: 120px;
     }
+
     .media-options a {
         font-size: 12px;
         padding: 0.5rem 0.6rem;
     }
+
     .info-card {
         width: 100%;
+        padding: 0.5rem;
         height: 150px;
     }
+
     .info-card .details {
         display: none;
         /* width: calc(100% - 200px); */
     }
+
+    .info-card .mobile-details {
+        display: flex;
+        width: 100%;
+    }
+
     .hide-on-desktop {
         display: flex !important;
     }
+
     .mobileCards {
         margin: 0px 0;
         flex-direction: column;
         gap: 10px;
         height: auto;
     }
-    .mobileCards > div {
+
+    .mobileCards>div {
         padding: 0;
-    }.mobileButtons {
+    }
+
+    .mobileButtons {
         flex-direction: column;
     }
-    
+
+    .ss-item.movieslaysource {
+        padding: .36rem 0;
+        min-width: 38px !important;
+    }
+
 }
+
 .server.thin {
     padding: 0.2rem 0.5rem;
 }
+
 .movie-page.fullscreen {
     padding: 0;
 }
+
 .movie-page.fullscreen iframe {
     width: 100%;
     height: 100%;
 }
+
 .movie-page.fullscreen .info-card {
     display: none;
 }
@@ -357,6 +434,7 @@ body {
 .fullscreen .hide-on-fullscreen {
     display: none !important;
 }
+
 .mnm-btn {
     font-size: 22px;
     background: #ffffff15;
@@ -387,6 +465,7 @@ body {
     border-radius: 8px;
     transition: all 0.2s ease;
 }
+
 .remove-recent:hover {
     background: #ffffff25;
     cursor: pointer;

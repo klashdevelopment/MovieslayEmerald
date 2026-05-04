@@ -19,8 +19,12 @@ export class AnyEmbedAPI {
     return fetch(url.toString());
   }
 
-  async stream(mediaId: string | number): Promise<Response> {
-    return this.get(`${BASE_URL}/api/v1/stream/${mediaId}`);
+  async stream(mediaId: string | number, season?: string, episode?: string): Promise<Response> {
+    const params: Record<string, string> = { id: String(mediaId) };
+    if (season) params.season = season;
+    if (episode) params.episode = episode;
+    if (season || episode) params.is_tv = "true";
+    return this.get(`${BASE_URL}/api/v1/stream/${mediaId}`, params);
   }
 
   // add a route for proxy

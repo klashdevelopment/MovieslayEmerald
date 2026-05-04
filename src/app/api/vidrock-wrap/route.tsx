@@ -3,6 +3,7 @@ import CryptoJS from "crypto-js";
 
 const SECRET = "x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9";
 const BASE_URL = "https://vidrock.net/api";
+const SUB_URL = "https://sub.vdrk.site/v1";
 
 function encryptMediaId(tmdb: string, type: "movie" | "tv", season = "1", episode = "1"): string {
   const input = type === "tv" ? `${tmdb}_${season}_${episode}` : tmdb;
@@ -48,8 +49,22 @@ export async function GET(req: NextRequest) {
       }
     })
   );
+  
+  const subs = [];
+  // https://sub.vdrk.site/v1/movie/533535
+  // https://sub.vdrk.site/v1/tv/94997/1/1
+  try {
+    const subUrl = `${SUB_URL}/${type}/${tmdb}${type === "tv" ? `/${season}/${episode}` : ""}`;
+    const subResponse = await fetch(subUrl);
+    if (subResponse.ok) {
+      const subData = await subResponse.json();
+      if (Array.isArray(subData)) {
+        subs.push(...subData);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch subtitles:", e);
+  }
 
-//   hls = hls.reverse();
-
-  return NextResponse.json({ hls, mp4 }, { status: upstream.status });
+  return NextResponse.json({ hls, mp4, subs }, { status: upstream.status });
 }
