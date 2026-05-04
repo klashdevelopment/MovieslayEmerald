@@ -146,7 +146,7 @@ export default function PlayerPage({ params }: MovieProps) {
 
             // Vyla
             (async () => {
-                const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', playerData!.season + "", playerData!.episode + "");
+                const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', playerData!.season, playerData!.episode);
                 if (!vyla) return;
                 const streams = (vyla.sources ?? []).map((s: any) => ({
                     label: `Vyla ${s.label} / ${s.source}`,
@@ -170,7 +170,7 @@ export default function PlayerPage({ params }: MovieProps) {
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = s.format ? (s.format === "m3u8" ? "hls" : s.format) : (url.includes(".m3u8") ? "hls" : "mp4");
-                        streams.push({ label: `AnyEmbed ${format} ${s.quality}`, type: format, url, uuid: randomUUID() });
+                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID() });
                         for (const sub of s.subtitles ?? []) {
                             const subUrl: string = sub.url ?? "";
                             if (!subUrl) continue;
@@ -185,6 +185,11 @@ export default function PlayerPage({ params }: MovieProps) {
                     }
                 }
                 commitResults(streams, captions, { from: "anyembed", data: ae });
+                // since AE usually has good streams,
+                // if the current one hasnt loaded yet (EVEN IF firstStreamSet is true), set it to the first AE stream
+                if (streams.length > 0 && videoLoading) {
+                    setCurrentStream(streams[0]);
+                }
             })(),
 
             // Vidrock
@@ -299,6 +304,8 @@ Example Caption
         }
     }
 
+    const [showControlsTimeout, setShowControlsTimeout] = useState<NodeJS.Timeout | null>(null);
+
     const videoProps: React.VideoHTMLAttributes<HTMLVideoElement> = {
         controls: false,
         autoPlay: true,
@@ -307,7 +314,12 @@ Example Caption
         onClick: playPause,
         onMouseMove: () => {
             setShowControls(true);
-            setTimeout(() => setShowControls(false), 3000);
+            if (showControlsTimeout) {
+                clearTimeout(showControlsTimeout);
+            }
+            setShowControlsTimeout(setTimeout(() => {
+                setShowControls(false);
+            }, 3000));
         },
         onTimeUpdate: (e) => {
             setCurrentTime(e.currentTarget.currentTime);
@@ -317,7 +329,19 @@ Example Caption
         onLoadedMetadata: (e) => {
             setDuration(e.currentTarget.duration);
             setVideoLoading(false);
-        }
+        },
+        // fail load
+        onError: () => {
+            if(!manualServer) {
+                let nextStreamIndex = allStreams.findIndex(s => s.uuid === currentStream?.uuid) + 1;
+                if (nextStreamIndex < allStreams.length) {
+                    setCurrentStream(allStreams[nextStreamIndex]);
+                    setVideoLoading(true);
+                }
+            } else {
+                // maybe display warning icon instead of loading
+            }
+        },
     }
 
     const [currentTime, setCurrentTime] = useState(0);
@@ -342,6 +366,8 @@ Example Caption
     };
 
     const [videoLoading, setVideoLoading] = useState(true);
+
+    const [manualServer, setManualServer] = useState(false);
 
     function keyPresses(e: React.KeyboardEvent<HTMLDivElement>) {
         if (e.code === "Space") {
@@ -475,6 +501,7 @@ Example Caption
                                                             setCurrentStream(stream);
                                                             setShowServerSelect(false);
                                                             setVideoLoading(true);
+                                                            setManualServer(true);
                                                         }}
                                                     >
                                                         <ListItemButton selected={currentStream?.uuid === stream.uuid}>

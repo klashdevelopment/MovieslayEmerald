@@ -64,7 +64,7 @@ export default function Controls({
             <div className="server light">
                 <div className="server-split">
                     {Object.keys(sources).slice(0, 4).map((key, i) => (
-                        <Tooltip title={sources[key].tooltip} className={`ss-item ${key==='movieslay' && 'movieslaysource'}
+                        <Tooltip key={key} title={sources[key].tooltip} className={`ss-item ${key==='movieslay' && 'movieslaysource'}
                             ${i===3 && 'right-corners'}
                             ${i===0 && 'left-corners'} ${source == key && 'active'}`} onClick={() => {
                             setSource(key);
