@@ -169,7 +169,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         const url = s.requires_proxy
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
-                        const format = s.format ? (s.format === "m3u8" ? "hls" : s.format) : (url.includes(".m3u8") ? "hls" : "mp4");
+                        const format = (url.includes(".m3u8") ? "hls" : "mp4");
                         streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID() });
                         for (const sub of s.subtitles ?? []) {
                             const subUrl: string = sub.url ?? "";
