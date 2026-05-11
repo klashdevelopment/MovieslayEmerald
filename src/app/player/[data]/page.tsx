@@ -201,7 +201,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 const captions = [];
                 for (const source of ae.sources ?? []) {
                     for (const s of source.streams ?? []) {
-                        const url = (s.requires_proxy&&s.proxy_mode)
+                        const url = (s.requires_proxy&&(s.proxy_mode==='full'))
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = (url.includes(".m3u8") ? "hls" : "mp4");
