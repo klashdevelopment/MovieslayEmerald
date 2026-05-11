@@ -155,6 +155,9 @@ export default function PlayerPage({ params }: MovieProps) {
                     uuid: randomUUID(),
                 }));
                 commitResults(streams, [], { from: "vyla", data: vyla });
+                if (streams.length > 0 && videoLoading) {
+                    setCurrentStream(streams[0]);
+                }
             })(),
 
             // AnyEmbed
@@ -332,7 +335,7 @@ Example Caption
         },
         // fail load
         onError: () => {
-            if(!manualServer) {
+            if (!manualServer) {
                 let nextStreamIndex = allStreams.findIndex(s => s.uuid === currentStream?.uuid) + 1;
                 if (nextStreamIndex < allStreams.length) {
                     setCurrentStream(allStreams[nextStreamIndex]);
@@ -419,9 +422,10 @@ Example Caption
                         ) : (
                             <URLPlayer {...videoProps} videoRef={videoRef} url={currentStream.url} subtitleEnabled={currentCaption} />
                         )}
-                        <div style={{ position: "absolute", bottom: "0", left: "0", height: "50px", display: `${
-                            showControls ? "flex" : "none"
-                        }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
+                        <div style={{
+                            position: "absolute", bottom: "0", left: "0", height: "50px", display: `${showControls ? "flex" : "none"
+                                }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
+                        }}>
                             <Slider
                                 size="sm"
                                 value={duration ? (currentTime / duration) * 100 : 0}
@@ -456,10 +460,10 @@ Example Caption
                                     height: "30px",
                                 }}>
                                     <Tooltip title={videoIsPaused ? "Play" : "Pause"} variant={'plain'}>
-                                    <i className={`control-icon fas fa-${videoLoading ? `sync fa-spin` : (videoIsPaused ? "play" : "pause")}`} style={{ marginRight: "8px" }} onClick={() => {
-                                        if (videoLoading) return;
-                                        playPause();
-                                    }}></i>
+                                        <i className={`control-icon fas fa-${videoLoading ? `sync fa-spin` : (videoIsPaused ? "play" : "pause")}`} style={{ marginRight: "8px" }} onClick={() => {
+                                            if (videoLoading) return;
+                                            playPause();
+                                        }}></i>
                                     </Tooltip>
                                     <span>{formatTime(currentTime)}</span>
                                     <span> / </span>
