@@ -74,6 +74,28 @@ function URLPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
     </video>
 }
 
+async function validateStream(stream: { type: string; url: string }): Promise<boolean> {
+    try {
+        if (stream.type === "hls") {
+            // for m3u8, fetch and check it's actually a playlist
+            const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) return false;
+            const text = await res.text();
+            return text.includes("#EXTM3U");
+        } else {
+            // for mp4, just check the response is ok and isn't 'no'
+            const res = await fetch(stream.url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+            if (!res.ok) return false;
+            const ct = res.headers.get("content-type") ?? "";
+            return ct.includes("video") || ct.includes("octet-stream");
+        }
+    } catch {
+        return false;
+    }
+}
+
+const sources = ['febbox', 'anyembed', 'vidrock', 'vyla'] as const;
+
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -86,6 +108,7 @@ export default function PlayerPage({ params }: MovieProps) {
 
     const [allStreams, setAllStreams] = useState<{ label: string; type: string; url: string, uuid: string }[]>([]);
     const [currentStream, setCurrentStream] = useState<{ label: string; type: string; url: string, uuid: string } | null>(null);
+    const [pendingTasks, setPendingTasks] = useState<number>(sources.length);
 
     async function fetchContent() {
         const name = (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) || "";
@@ -141,7 +164,10 @@ export default function PlayerPage({ params }: MovieProps) {
                         uuid: randomUUID(),
                     });
                 }
-                commitResults(streams, captions, { from: "febbox", data: febbox });
+                const validStreams = (await Promise.all(
+                    streams.map(async s => (await validateStream(s) ? s : null))
+                )).filter(Boolean) as typeof streams;
+                commitResults(validStreams, captions, { from: "febbox", data: febbox });
             })(),
 
             // Vyla
@@ -154,9 +180,12 @@ export default function PlayerPage({ params }: MovieProps) {
                     url: s.url,
                     uuid: randomUUID(),
                 }));
-                commitResults(streams, [], { from: "vyla", data: vyla });
-                if (streams.length > 0 && videoLoading) {
-                    setCurrentStream(streams[0]);
+                const validStreams = (await Promise.all(
+                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                )).filter(Boolean) as typeof streams;
+                commitResults(validStreams, [], { from: "vyla", data: vyla });
+                if (validStreams.length > 0 && videoLoading) {
+                    setCurrentStream(validStreams[0]);
                 }
             })(),
 
@@ -187,11 +216,13 @@ export default function PlayerPage({ params }: MovieProps) {
                         }
                     }
                 }
-                commitResults(streams, captions, { from: "anyembed", data: ae });
+                const validStreams = (await Promise.all(
+                    streams.map(async s => (await validateStream(s) ? s : null))
+                )).filter(Boolean) as typeof streams;
+                commitResults(validStreams, captions, { from: "anyembed", data: ae });
                 // since AE usually has good streams,
-                // if the current one hasnt loaded yet (EVEN IF firstStreamSet is true), set it to the first AE stream
-                if (streams.length > 0 && videoLoading) {
-                    setCurrentStream(streams[0]);
+                if (validStreams.length > 0 && videoLoading) {
+                    setCurrentStream(validStreams[0]);
                 }
             })(),
 
@@ -226,9 +257,14 @@ export default function PlayerPage({ params }: MovieProps) {
                         uuid: randomUUID(),
                     });
                 }
-                commitResults(streams, captions, { from: "vidrock", data: vidrock });
+                const validStreams = (await Promise.all(
+                    streams.map(async s => (await validateStream(s) ? s : null))
+                )).filter(Boolean) as typeof streams;
+                commitResults(validStreams, captions, { from: "vidrock", data: vidrock });
             })(),
-        ];
+        ].map(task =>
+            task.finally(() => setPendingTasks((p: number) => p - 1))
+        );;
 
         await Promise.allSettled(tasks);
 
@@ -594,11 +630,14 @@ Example Caption
                         </div>
                     </div>
                 )}
-                {allFinalDatas.length > 0 && allStreams.length === 0 && <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {allFinalDatas.length > 0 && allStreams.length === 0 && (pendingTasks > 0 ? <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
+                    <p style={{ color: 'white' }}>Loading ({4 - pendingTasks}/4)...</p>
+                </div> : <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
                     <p style={{ color: "#aaa" }}>No playable stream found.
-                        <br />Switch sources via the <i className="fas fa-dice-one"></i><i className="fas fa-dice-two"></i><i className="fas fa-dice-three"></i> buttons</p>
-                </div>}
+                        <br />Switch services via the <i className="fas fa-dice-one"></i><i className="fas fa-dice-two"></i><i className="fas fa-dice-three"></i> buttons</p>
+                </div>)}
                 {error && <p style={{ color: "red" }}>{error}</p>}
             </div>
         </CssVarsProvider>

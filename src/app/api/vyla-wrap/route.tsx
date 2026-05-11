@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const e = searchParams.get("e");
     const type = searchParams.get("type") || "tv";
 
-    if (!id || !s || !e) {
+    if (!id || (type === "tv" && (!s || !e))) {
         return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
