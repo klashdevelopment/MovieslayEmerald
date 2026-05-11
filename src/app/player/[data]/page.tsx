@@ -78,10 +78,11 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     try {
         if (stream.type === "hls") {
             // for m3u8, fetch and check it's actually a playlist
-            const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
-            if (!res.ok) return false;
-            const text = await res.text();
-            return text.includes("#EXTM3U");
+            // const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
+            // if (!res.ok) return false;
+            // const text = await res.text();
+            // return text.includes("#EXTM3U");
+            return true;
         } else {
             // for mp4, just check the response is ok and isn't 'no'
             const res = await fetch(stream.url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
@@ -111,6 +112,8 @@ export default function PlayerPage({ params }: MovieProps) {
     const [pendingTasks, setPendingTasks] = useState<number>(sources.length);
 
     async function fetchContent() {
+        setPendingTasks(sources.length);
+
         const name = (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) || "";
         const year = playerData?.type === "movie"
             ? (tmdbData as TMDBMovie)?.release_date?.split("-")[0]
@@ -198,7 +201,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 const captions = [];
                 for (const source of ae.sources ?? []) {
                     for (const s of source.streams ?? []) {
-                        const url = s.requires_proxy
+                        const url = (s.requires_proxy&&s.proxy_mode)
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = (url.includes(".m3u8") ? "hls" : "mp4");
@@ -589,7 +592,7 @@ Example Caption
                                                         None
                                                     </ListItemButton>
                                                 </ListItem>
-                                                {allCaptions.sort((a, b) => (a.type === 'vtt' ? -1 : 1)).map((caption) => (
+                                                {allCaptions/*.sort((a, b) => (a.type === 'vtt' ? -1 : 1))*/.map((caption) => (
                                                     <ListItem
                                                         key={caption.uuid}
                                                         value={caption.uuid}
