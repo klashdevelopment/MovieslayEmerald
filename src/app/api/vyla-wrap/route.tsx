@@ -12,11 +12,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
-    const url = `https://vyla-player.pages.dev/api?sources=1&id=${id}&s=${s}&e=${e}`;
-    // let url = `https://vyla-player.pages.dev/api/tv?id=${id}&season=${s}&episode=${e}`;
-    // if(type === "movie") {
-    //     url = `https://vyla-player.pages.dev/api/movie?id=${id}`;
-    // }
+    const url = type === "movie"
+        ? `https://missourimonster-vyla-api.hf.space/api/movie?id=${id}`
+        : `https://missourimonster-vyla-api.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
     try {
         const response = await fetch(url);
         if (!response.ok) {
