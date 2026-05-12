@@ -205,7 +205,7 @@ export default function PlayerPage({ params }: MovieProps) {
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = (url.includes(".m3u8") ? "hls" : "mp4");
-                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID() });
+                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(),  qs: s.quality_score });
                         for (const sub of s.subtitles ?? []) {
                             const subUrl: string = sub.url ?? "";
                             if (!subUrl) continue;
@@ -221,7 +221,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 }
                 const validStreams = (await Promise.all(
                     streams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean) as typeof streams;
+                )).filter(Boolean).sort((a:any, b:any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
                 commitResults(validStreams, captions, { from: "anyembed", data: ae });
                 // since AE usually has good streams,
                 if (validStreams.length > 0 && videoLoading) {

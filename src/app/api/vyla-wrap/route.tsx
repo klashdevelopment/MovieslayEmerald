@@ -1,4 +1,3 @@
-//https://vyla-player.pages.dev/api?sources=1&id=129412&s=7&e=1
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -13,12 +12,12 @@ export async function GET(request: Request) {
     }
 
     const url = type === "movie"
-        ? `https://missourimonster-vyla-api.hf.space/api/movie?id=${id}`
-        : `https://missourimonster-vyla-api.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
+        ? `https://missourimonster-vyla.hf.space/api/movie?id=${id}`
+        : `https://missourimonster-vyla.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            throw new Error(`Error fetching data: ${response.statusText}`);
+            throw new Error(`Error fetching ${url}: ${response.statusText}`);
         }
         const data = await response.json();
         return NextResponse.json(data);
