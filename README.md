@@ -7,3 +7,7 @@ pnpm i
 pnpm run dev # dev
 pnpm start # prod
 ```
+
+### TODO
+- Save watch progress
+- Custom PiP popup
