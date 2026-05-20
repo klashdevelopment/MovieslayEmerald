@@ -33,7 +33,7 @@ interface PlayerData {
 }
 
 type FinalData = {
-    from: "febbox" | "anyembed" | "vidrock" | "vyla";
+    from: "febbox" | "anyembed" | "vidrock" | "vyla" | string;
     data: FebboxReply | any; // FebboxReply is a bit misleading - all apis are parsed to that interface now
 };
 type Caption = {
@@ -175,20 +175,73 @@ export default function PlayerPage({ params }: MovieProps) {
 
             // Vyla
             (async () => {
-                const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', playerData!.season, playerData!.episode);
-                if (!vyla) return;
-                const streams = (vyla.sources ?? []).map((s: any) => ({
-                    label: `Vyla ${s.label} / ${s.source}`,
-                    type: s.url.includes(".m3u8") ? "hls" : "mp4",
-                    url: s.url,
-                    uuid: randomUUID(),
-                }));
-                const validStreams = (await Promise.all(
-                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                )).filter(Boolean) as typeof streams;
-                commitResults(validStreams, [], { from: "vyla", data: vyla });
-                if (validStreams.length > 0 && videoLoading) {
-                    setCurrentStream(validStreams[0]);
+                // const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', undefined, playerData!.season, playerData!.episode);
+                // if (!vyla) return;
+                // const streams = (vyla.sources ?? []).map((s: any) => ({
+                //     label: `Vyla ${s.label} / ${s.source}`,
+                //     type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                //     url: s.url,
+                //     uuid: randomUUID(),
+                // }));
+                // const validStreams = (await Promise.all(
+                //     streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                // )).filter(Boolean) as typeof streams;
+                // commitResults(validStreams, [], { from: "vyla", data: vyla });
+                // if (validStreams.length > 0 && videoLoading) {
+                //     setCurrentStream(validStreams[0]);
+                // }
+                // The logic above fetches all sources at once, so it takes quite some time.
+                // use VylaAPI.getSources(), then add the number of sources to pending, and then have a task
+                // for each source to fetch them one by one, committing results as they come in, which should make the player more responsive.
+
+                const sources = await VylaAPI.getSources();
+                setPendingTasks((p) => p + sources.length - 1); // -1 because we already have one pending for the initial fetch
+                // Do not wait for each one to finish before starting the next, as some sources are much faster than others and we want to show results as soon as they come in
+                for (const source of sources) {
+                    (async (source) => {
+                        try {
+                            const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', source, playerData!.season, playerData!.episode);
+                            if (!vyla) return;
+                            const streams = [
+                                {
+                                    label: `Vyla ${vyla.source} / ${source}`,
+                                    type: vyla.url.includes(".m3u8") ? "hls" : "mp4",
+                                    url: vyla.url,
+                                    uuid: randomUUID(),
+                                }
+                            ]
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+                            commitResults(validStreams, [], { from: "vyla-" + source, data: vyla });
+                            if (validStreams.length > 0 && videoLoading) {
+                                setCurrentStream(validStreams[0]);
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching Vyla source ${source}:`, error);
+                        }
+                    })(source);
+                }
+
+                // now, subtitles!
+                try {
+                    const subs = await VylaAPI.getSubtitles(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', playerData!.season, playerData!.episode);
+                    const captions = [];
+                    for (const sub of subs) {
+                        const url: string = sub.file ?? "";
+                        if (!url) continue;
+                        captions.push({
+                            type: sub.type || captionType(url),
+                            label: "Vyla " + (sub.label ?? sub.language ?? "") + '(' + sub.source + '/' + (captions.length + 1) + ')',
+                            language: sub.language ?? sub.label ?? "",
+                            url: `/api/subtitle-wrap?url=${encodeURIComponent(url)}`,
+                            uuid: randomUUID(),
+                        });
+                    }
+
+                    commitResults([], captions, { from: "vyla-subtitles", data: subs });
+                } catch (error) {
+                    console.error("Error fetching Vyla subtitles:", error);
                 }
             })(),
 
@@ -201,11 +254,11 @@ export default function PlayerPage({ params }: MovieProps) {
                 const captions = [];
                 for (const source of ae.sources ?? []) {
                     for (const s of source.streams ?? []) {
-                        const url = (s.requires_proxy&&(s.proxy_mode==='full'))
+                        const url = (s.requires_proxy && (s.proxy_mode === 'full'))
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = (url.includes(".m3u8") ? "hls" : "mp4");
-                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(),  qs: s.quality_score });
+                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(), qs: s.quality_score });
                         for (const sub of s.subtitles ?? []) {
                             const subUrl: string = sub.url ?? "";
                             if (!subUrl) continue;
@@ -221,7 +274,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 }
                 const validStreams = (await Promise.all(
                     streams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean).sort((a:any, b:any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
+                )).filter(Boolean).sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
                 commitResults(validStreams, captions, { from: "anyembed", data: ae });
                 // since AE usually has good streams,
                 if (validStreams.length > 0 && videoLoading) {

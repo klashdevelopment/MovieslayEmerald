@@ -20,7 +20,7 @@ async function refreshToken(): Promise<void> {
   if (!res.ok) throw new Error(`Failed to fetch session: ${res.status}`);
   const data: SessionResponse = await res.json();
   token = data.token;
-  tokenExpiresAt = Date.now() + data.expires_in * 1000;
+  tokenExpiresAt = Date.now() + data.expires_in * 1000; // TODO: investigate
 }
 
 function isTokenExpired(): boolean {

@@ -11,3 +11,5 @@ pnpm start # prod
 ### TODO
 - Save watch progress
 - Custom PiP popup
+- Profiles
+- Vyla individual
