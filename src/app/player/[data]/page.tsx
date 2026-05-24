@@ -10,7 +10,8 @@ import { VidrockAPI } from "@/app/utils/VidrockAPI";
 import { AnyEmbedAPI } from "@/app/utils/AnyEmbedAPI";
 import { VylaAPI } from "@/app/utils/VylaAPI";
 import "./player-imports.css";
-import { Button, CssVarsProvider, Drawer, List, ListItem, ListItemButton, Option, Select, Slider, Tooltip } from "@mui/joy";
+import { Button, CircularProgress, CssVarsProvider, Drawer, LinearProgress, List, ListItem, ListItemButton, Option, Select, Slider, Tooltip } from "@mui/joy";
+import { HLSDownloader } from "./HLSDownloader";
 
 
 function randomUUID() {
@@ -201,7 +202,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     (async (source) => {
                         try {
                             const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', source, playerData!.season, playerData!.episode);
-                            if (!vyla) return;
+                            if (!vyla || !vyla.url) return;
                             const streams = [
                                 {
                                     label: `Vyla ${vyla.source} / ${source}`,
@@ -480,6 +481,46 @@ Example Caption
         }
     }
 
+
+    // have an activeDownload that stores the uuid of the stream thats downloading, the progress/maxProgress, and whether it's done. then in the server select, show a download button for each stream that isn't the current one, and when clicked, set the activeDownload to that stream, and start downloading it, updating progress as it goes, and when done, open the url in a new tab.
+    const [activeDownload, setActiveDownload] = useState<{ uuid: string; downloader: HLSDownloader } | null>(null);
+
+    function startDownload(stream: { label: string; type: string; url: string; uuid: string }) {
+        if (activeDownload) return; // only one at a time for simplicity
+
+        if(stream.type !== "hls") {
+            // for direct mp4 links, just open the url in a new tab
+            const a = document.createElement("a");
+            a.href = stream.url;
+            a.download = `${(
+                tmdbData ? (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) : "media"
+            ) || "video"}_${stream.label}_${stream.type}-Movieslay.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            return;
+        }
+
+        const downloader = new HLSDownloader(stream.url, (progress) => { }, (blob) => {
+            setActiveDownload(null);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${(
+                tmdbData ? (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) : "media"
+            ) || "video"}_${stream.label}_${stream.type}-Movieslay.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }, (err) => {
+            setActiveDownload(null);
+            console.error("Download failed:", err);
+            alert("Download failed: " + err);
+        });
+        setActiveDownload({ uuid: stream.uuid, downloader: downloader });
+        downloader.start();
+    }
+
     return (
         <CssVarsProvider defaultMode="dark">
             <div className="mvs-player-root" style={{
@@ -604,6 +645,30 @@ Example Caption
                                                             <i className={`fas fa-${stream.type === "hls" ? "stream" : "file-video"}`} style={{ marginRight: "8px" }}></i>
                                                             {stream.label}
                                                         </ListItemButton>
+                                                        <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
+                                                            if (activeDownload) {
+                                                                if(activeDownload.uuid === stream.uuid) {
+                                                                    activeDownload.downloader.cancel();
+                                                                    e.stopPropagation();
+                                                                    return;
+                                                                }
+                                                                alert("Another download is in progress. Please wait.");
+                                                                e.stopPropagation();
+                                                                return;
+                                                            }
+                                                            startDownload(stream);
+                                                            e.stopPropagation();
+                                                        }} style={{ marginLeft: "8px" }} disabled={!!activeDownload && activeDownload.uuid !== stream.uuid}
+                                                            sx={activeDownload?.uuid === stream.uuid ? {
+                                                                '&:hover': {
+                                                                    bgcolor: 'danger.softBg',
+                                                                    color: 'danger.plainColor',
+                                                                },
+                                                            } : {}}>
+                                                            {activeDownload?.uuid === stream.uuid ? <CircularProgress size="sm" determinate value={activeDownload?.downloader?.progress || 0} style={{ marginRight: "0px", scale: 1 }}>
+                                                                {activeDownload.downloader.progress.toFixed(1)}
+                                                            </CircularProgress> : <i className="fas fa-download"></i>}
+                                                        </Button>
                                                     </ListItem>
                                                 ))}
                                             </List>

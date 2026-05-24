@@ -39,8 +39,20 @@ async function getTV(id: number, customKey?: string) {
     const string = `tv/${id}?language=en-US&include_adult=false`;
     return await useTMDB(string, customKey);
 }
+async function getMultiple(entries: {type: string, id: number}[], customKey?: string) {
+    const promises = entries.map(entry => {
+        if(entry.type === 'movie') {
+            return getMovie(entry.id, customKey);
+        } else if(entry.type === 'tv') {
+            return getTV(entry.id, customKey);
+        } else {
+            return Promise.resolve(null);
+        }
+    });
+    return await Promise.all(promises);
+}
 
-async function getFromType(type: string, page: number, customKey?: string) {
+async function getFromType(type: string, page: any, customKey?: string) {
     switch (type) {
         case 'discover':
             return await getMovies(page, customKey);
@@ -81,5 +93,13 @@ export async function GET(request: Request) {
     }
 
     const data = await getFromType(type, page, customApiKey);
+    return NextResponse.json(data);
+}
+
+export async function POST(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const customApiKey = searchParams.get('apiKey') || undefined;
+    const body = await request.json();
+    const data = await getMultiple(body.entries, customApiKey);
     return NextResponse.json(data);
 }
