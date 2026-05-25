@@ -293,7 +293,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 );
                 if (!vidrock) return;
                 const streams = [];
-                for (const s of (vidrock.hls ?? []).filter((s: any) => !s.url.includes("storrrrrrm.site"))) {
+                for (const s of (vidrock.hls ?? [])) {
                     streams.push({ label: `Vidrock HLS`, type: "hls", url: s.url, uuid: randomUUID() });
                 }
                 for (const res of Object.keys(vidrock.mp4 ?? {}).map(Number).sort((a, b) => b - a)) {

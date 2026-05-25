@@ -39,7 +39,43 @@ export async function GET(req: NextRequest) {
       if (!source.url) return;
 
       if (source.type === "hls") {
-        hls.push({ type: "hls", url: source.url });
+        try {
+          const hlsResponse = await fetch(source.url).then((r) => r.text());
+          const lines = hlsResponse.split("\n");
+          const m3u8Variants = [];
+          
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith("#EXT-X-STREAM-INF") && i + 1 < lines.length) {
+              const filename = lines[i + 1].trim();
+              if (filename && !filename.startsWith("#")) {
+                const variantUrl = source.url.substring(0, source.url.lastIndexOf("/") + 1) + filename;
+                m3u8Variants.push(variantUrl);
+              }
+            }
+          }
+          
+          if (m3u8Variants.length > 0) {
+            m3u8Variants.forEach((url) => hls.push({ type: "hls", url }));
+          } else {
+            try {
+              const fallbackText = await fetch(source.url).then((r) => r.text());
+              if (fallbackText.includes("#EXTM3U")) {
+                hls.push({ type: "hls", url: source.url });
+              }
+            } catch {
+              // Ignore if verification fails
+            }
+          }
+        } catch (e) {
+          try {
+            const fallbackText = await fetch(source.url).then((r) => r.text());
+            if (fallbackText.includes("#EXTM3U")) {
+              hls.push({ type: "hls", url: source.url });
+            }
+          } catch {
+            // Ignore if verification fails
+          }
+        }
       } else if (source.type === "mp4") {
         const playlist = await fetch(source.url).then((r) => r.json()) as { resolution: number; url: string }[];
         for (const { resolution, url } of playlist) {
