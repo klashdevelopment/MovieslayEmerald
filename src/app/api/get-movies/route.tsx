@@ -52,6 +52,11 @@ async function getMultiple(entries: {type: string, id: number}[], customKey?: st
     return await Promise.all(promises);
 }
 
+async function getFromGenre(type: string, genreId: number, page: number, customKey?: string) {
+    const string = `discover/${type}?with_genres=${genreId}&page=${page}&sort_by=popularity.desc&include_adult=false&language=en-US`;
+    return await useTMDB(string, customKey);
+}
+
 async function getFromType(type: string, page: any, customKey?: string) {
     switch (type) {
         case 'discover':
@@ -90,6 +95,24 @@ export async function GET(request: Request) {
         const string = `search/multi?query=${query}&page=${page}&include_adult=false&language=en-US&certification_country=US&certification.lte=PG-13`;
         var dataSearch = await useTMDB(string, customApiKey);
         return NextResponse.json(dataSearch);
+    }
+
+    if(type === 'discover-genre') {
+        const genreId = parseInt(searchParams.get('genreId') ?? '0', 10);
+        if(!genreId) {
+            return NextResponse.json({ error: 'Missing genreId parameter' }, { status: 400 });
+        }
+        const dataGenre = await getFromGenre('movie', genreId, page, customApiKey);
+        return NextResponse.json(dataGenre);
+    }
+
+     if(type === 'discover-tv-genre') {
+        const genreId = parseInt(searchParams.get('genreId') ?? '0', 10);
+        if(!genreId) {
+            return NextResponse.json({ error: 'Missing genreId parameter' }, { status: 400 });
+        }
+        const dataGenre = await getFromGenre('tv', genreId, page, customApiKey);
+        return NextResponse.json(dataGenre);
     }
 
     const data = await getFromType(type, page, customApiKey);

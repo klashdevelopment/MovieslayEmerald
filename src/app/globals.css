@@ -328,7 +328,15 @@ body {
     display: none;
 }
 
+.mobile-center {
+    display: flex;
+}
+
 @media (max-width: 768px) {
+    .mobile-center {
+        display: flex;
+        justify-content: center;
+    }
     .servers {
         width: 160px;
     }

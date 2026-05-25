@@ -294,7 +294,10 @@ export default function PlayerPage({ params }: MovieProps) {
                 if (!vidrock) return;
                 const streams = [];
                 for (const s of (vidrock.hls ?? [])) {
-                    streams.push({ label: `Vidrock HLS`, type: "hls", url: s.url, uuid: randomUUID() });
+                    const urlFilename = s.url.split('/').pop() ?? '';
+                    // only get the last part of the url for the label, to avoid it being too long, removing the .m3u8 if present
+                    const labelPart = urlFilename.endsWith(".m3u8") ? urlFilename.slice(0, -6) : urlFilename;
+                    streams.push({ label: `Vidrock ${labelPart}`, type: "hls", url: s.url, uuid: randomUUID() });
                 }
                 for (const res of Object.keys(vidrock.mp4 ?? {}).map(Number).sort((a, b) => b - a)) {
                     if (vidrock.mp4[res]?.url) streams.push({ label: `Vidrock ${res}p`, type: "mp4", url: vidrock.mp4[res].url, uuid: randomUUID() });

@@ -107,7 +107,7 @@ export default function MovieIndex() {
                 <b>All Genres</b>
                 <div className="flex gap-1 movie-list">
                     {genres.map((genre) => (
-                        <div key={genre.id} className={`movie-card`}>
+                        <div key={genre.id} className={`movie-card`} onClick={() => { goTo(`movie-${genre.id}`, 'genres') }}>
                             <img src={`/genres/${genre.name}.webp`} alt={genre.name} loading={"lazy"} />
                             <span>{genre.name}</span>
                         </div>
