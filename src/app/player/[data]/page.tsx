@@ -79,11 +79,11 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     try {
         if (stream.type === "hls") {
             // for m3u8, fetch and check it's actually a playlist
-            // const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
-            // if (!res.ok) return false;
-            // const text = await res.text();
-            // return text.includes("#EXTM3U");
-            return true;
+            const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) return false;
+            const text = await res.text();
+            return text.includes("#EXTM3U");
+            // return true;
         } else {
             // for mp4, just check the response is ok and isn't 'no'
             const res = await fetch(stream.url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
@@ -96,7 +96,7 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     }
 }
 
-const sources = ['febbox', 'anyembed', 'vidrock', 'vyla'] as const;
+const sources = ['febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -111,6 +111,7 @@ export default function PlayerPage({ params }: MovieProps) {
     const [allStreams, setAllStreams] = useState<{ label: string; type: string; url: string, uuid: string }[]>([]);
     const [currentStream, setCurrentStream] = useState<{ label: string; type: string; url: string, uuid: string } | null>(null);
     const [pendingTasks, setPendingTasks] = useState<number>(sources.length);
+    const [pendingTasksMax, setPendingTasksMax] = useState<number>(sources.length);
 
     async function fetchContent() {
         setPendingTasks(sources.length);
@@ -172,6 +173,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     streams.map(async s => (await validateStream(s) ? s : null))
                 )).filter(Boolean) as typeof streams;
                 commitResults(validStreams, captions, { from: "febbox", data: febbox });
+                setPendingTasks((p) => p - 1);
             })(),
 
             // Vyla
@@ -197,6 +199,7 @@ export default function PlayerPage({ params }: MovieProps) {
 
                 const sources = await VylaAPI.getSources();
                 setPendingTasks((p) => p + sources.length - 1); // -1 because we already have one pending for the initial fetch
+                setPendingTasksMax((p) => p + sources.length - 1);
                 // Do not wait for each one to finish before starting the next, as some sources are much faster than others and we want to show results as soon as they come in
                 for (const source of sources) {
                     (async (source) => {
@@ -215,9 +218,10 @@ export default function PlayerPage({ params }: MovieProps) {
                                 streams.map(async (s: any) => (await validateStream(s) ? s : null))
                             )).filter(Boolean) as typeof streams;
                             commitResults(validStreams, [], { from: "vyla-" + source, data: vyla });
-                            if (validStreams.length > 0 && videoLoading) {
+                            if (validStreams.length > 0 && videoLoading && !currentStream?.label?.startsWith("Vyla")) {
                                 setCurrentStream(validStreams[0]);
                             }
+                            setPendingTasks((p) => p - 1);
                         } catch (error) {
                             console.error(`Error fetching Vyla source ${source}:`, error);
                         }
@@ -241,45 +245,9 @@ export default function PlayerPage({ params }: MovieProps) {
                     }
 
                     commitResults([], captions, { from: "vyla-subtitles", data: subs });
+
                 } catch (error) {
                     console.error("Error fetching Vyla subtitles:", error);
-                }
-            })(),
-
-            // AnyEmbed
-            (async () => {
-                const api = new AnyEmbedAPI();
-                const res = await api.stream(playerData!.id, playerData!.season?.toString(), playerData!.episode?.toString());
-                const ae = await res.json();
-                const streams = [];
-                const captions = [];
-                for (const source of ae.sources ?? []) {
-                    for (const s of source.streams ?? []) {
-                        const url = (s.requires_proxy && (s.proxy_mode === 'full'))
-                            ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
-                            : s.url;
-                        const format = (url.includes(".m3u8") ? "hls" : "mp4");
-                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(), qs: s.quality_score });
-                        for (const sub of s.subtitles ?? []) {
-                            const subUrl: string = sub.url ?? "";
-                            if (!subUrl) continue;
-                            captions.push({
-                                type: captionType(subUrl),
-                                label: "AE " + (sub.label ?? sub.language ?? ""),
-                                language: sub.language ?? sub.label ?? "",
-                                url: `/api/subtitle-wrap?url=${encodeURIComponent(subUrl)}`,
-                                uuid: randomUUID(),
-                            });
-                        }
-                    }
-                }
-                const validStreams = (await Promise.all(
-                    streams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean).sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
-                commitResults(validStreams, captions, { from: "anyembed", data: ae });
-                // since AE usually has good streams,
-                if (validStreams.length > 0 && videoLoading) {
-                    setCurrentStream(validStreams[0]);
                 }
             })(),
 
@@ -321,6 +289,109 @@ export default function PlayerPage({ params }: MovieProps) {
                     streams.map(async s => (await validateStream(s) ? s : null))
                 )).filter(Boolean) as typeof streams;
                 commitResults(validStreams, captions, { from: "vidrock", data: vidrock });
+                setPendingTasks((p) => p - 1);
+            })(),
+
+            // XPass
+            (async () => {
+                try {
+                    // xpass-wrap
+                    /*/api/xpass-wrap?type=movie&id=687163 | /api/xpass-wrap?type=tv&id=76479&season=5&episode=8 -> {sources: [{id, name}]}
+
+/api/xpass-wrap?type=tv&id=76479&season=5&episode=8&source=SOURCEID / (same for movies, add &source) -> [{file, type, label}]*/
+                    // do it similar to Vyla where we first fetch the list of sources, and then for each source we fetch the streams, so that we can show results as they come in instead of waiting for all sources to be fetched before showing anything
+                    const type = playerData!.type === "movie" ? "movie" : "tv";
+                    const id = playerData!.id;
+                    const season = playerData!.season?.toString() || "1";
+                    const episode = playerData!.episode?.toString() || "1";
+                    const sourcesRes = await fetch(`/api/xpass-wrap?type=${type}&id=${id}&season=${season}&episode=${episode}`);
+                    const sourcesData: { sources: any[] } = await sourcesRes.json();
+                    const sources = sourcesData.sources ?? [];
+                    setPendingTasks((p) => p + sources.length - 1); // -1 because we already have one pending for the initial fetch
+                    setPendingTasksMax((p) => p + sources.length - 1);
+                    for (const source of sources.filter((s: any) => s.url&&s.id)) {
+                        (async (source) => {
+                            try {
+                                const res = await fetch(`/api/xpass-wrap?type=${type}&id=${id}&season=${season}&episode=${episode}&source=${source.id}`);
+                                const data = await res.json();
+                                const streams = (data ?? []).map((s: any) => ({
+                                    label: `XPass ${source.name} ${s.label}`,
+                                    type: s.type,
+                                    url: s.file,
+                                    uuid: randomUUID(),
+                                }));
+                                const validStreams = (await Promise.all(
+                                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                                )).filter(Boolean) as typeof streams;
+                                commitResults(validStreams, [], { from: "xpass-" + source.name, data });
+                                setPendingTasks((p) => p - 1);
+                            } catch (error) {
+                                console.error(`Error fetching XPass source ${source.name}:`, error);
+                            }
+                        })(source);
+                    }
+                } catch (error) {
+                    console.error("Error fetching XPass data:", error);
+                }
+            })(),
+
+            // 123Anime
+            (async () => {
+                try {
+                    const response = await fetch(`/api/123anime-wrap?id=${playerData!.id}&s=${playerData!.season ?? ""}&e=${playerData!.episode ?? ""}`);
+                    const data = await response.json();
+                    // Process 123Anime data: {sources: {label: string, m3u8: string}[]}}
+                    const streams = (data.sources ?? []).map((s: any) => ({
+                        label: `123Anime ${s.label}`,
+                        type: "hls",
+                        url: s.m3u8,
+                        uuid: randomUUID(),
+                    }));
+                    const validStreams = (await Promise.all(
+                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                    )).filter(Boolean) as typeof streams;
+                    commitResults(validStreams, [], { from: "123anime", data });
+                } catch (error) {
+                    console.error("Error fetching 123Anime data:", error);
+                }
+            })(),
+
+            // AnyEmbed
+            (async () => {
+                const api = new AnyEmbedAPI();
+                const res = await api.stream(playerData!.id, playerData!.season?.toString(), playerData!.episode?.toString());
+                const ae = await res.json();
+                const streams = [];
+                const captions = [];
+                for (const source of ae.sources ?? []) {
+                    for (const s of source.streams ?? []) {
+                        const url = (s.requires_proxy && (s.proxy_mode === 'full'))
+                            ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
+                            : s.url;
+                        const format = (url.includes(".m3u8") ? "hls" : "mp4");
+                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(), qs: s.quality_score });
+                        for (const sub of s.subtitles ?? []) {
+                            const subUrl: string = sub.url ?? "";
+                            if (!subUrl) continue;
+                            captions.push({
+                                type: captionType(subUrl),
+                                label: "AE " + (sub.label ?? sub.language ?? ""),
+                                language: sub.language ?? sub.label ?? "",
+                                url: `/api/subtitle-wrap?url=${encodeURIComponent(subUrl)}`,
+                                uuid: randomUUID(),
+                            });
+                        }
+                    }
+                }
+                const validStreams = (await Promise.all(
+                    streams.map(async s => (await validateStream(s) ? s : null))
+                )).filter(Boolean).sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
+                commitResults(validStreams, captions, { from: "anyembed", data: ae });
+                setPendingTasks((p) => p - 1);
+                // since AE usually has good streams,
+                if (validStreams.length > 0 && videoLoading) {
+                    setCurrentStream(validStreams[0]);
+                }
             })(),
         ].map(task =>
             task.finally(() => setPendingTasks((p: number) => p - 1))
@@ -424,6 +495,7 @@ Example Caption
             setCurrentTime(e.currentTarget.currentTime);
             setDuration(e.currentTarget.duration);
             setVideoIsPaused(e.currentTarget.paused);
+            setVideoLoading(false);
         },
         onLoadedMetadata: (e) => {
             setDuration(e.currentTarget.duration);
@@ -756,7 +828,7 @@ Example Caption
                 )}
                 {allFinalDatas.length > 0 && allStreams.length === 0 && (pendingTasks > 0 ? <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
-                    <p style={{ color: 'white' }}>Loading ({4 - pendingTasks}/4)...</p>
+                    <p style={{ color: 'white' }}>Loading ({pendingTasksMax - pendingTasks}/{pendingTasksMax})...</p>
                 </div> : <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
                     <p style={{ color: "#aaa" }}>No playable stream found.
