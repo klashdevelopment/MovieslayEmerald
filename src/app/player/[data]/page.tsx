@@ -96,7 +96,7 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     }
 }
 
-const sources = ['febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass'] as const;
+const sources = ['febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -149,7 +149,7 @@ export default function PlayerPage({ params }: MovieProps) {
         }
 
         const tasks = [
-            // Febbox
+            // Febbox but it uses pstream wrapper and barely functions
             (async () => {
                 const febbox = await FebboxAPI.search(name, year, playerData?.season, playerData?.episode);
                 const streams = [];
@@ -172,7 +172,31 @@ export default function PlayerPage({ params }: MovieProps) {
                 const validStreams = (await Promise.all(
                     streams.map(async s => (await validateStream(s) ? s : null))
                 )).filter(Boolean) as typeof streams;
-                commitResults(validStreams, captions, { from: "febbox", data: febbox });
+                commitResults(validStreams, captions, { from: "febboxpstream", data: febbox });
+                setPendingTasks((p) => p - 1);
+            })(),
+
+            // Febbox but we did the wrapper
+            // Fetch /api/febbox-wrap?type=movie&query=NAME | /api/febbox-wrap?type=tv&query=NAME&season=SEASON&episode=EPISODE -> {sources: [{type, file, label}]}
+            (async () => {
+                const type = playerData!.type === "movie" ? "movie" : "tv";
+                const name = (playerData!.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) || "";
+                const season = playerData!.season?.toString() || undefined;
+                const episode = playerData!.episode?.toString() || undefined;
+
+                const res = await fetch(`/api/febbox-wrap?type=${type}&query=${encodeURIComponent(name)}${season ? `&season=${season}` : ""}${episode ? `&episode=${episode}` : ""}`);
+                const data = await res.json();
+                console.log(data);
+                const streams = (data.sources ?? []).map((s: any) => ({
+                    label: `Febbox ${s.label}`,
+                    type: 'hls',
+                    url: s.file,
+                    uuid: randomUUID(),
+                }));
+                const validStreams = (await Promise.all(
+                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                )).filter(Boolean) as typeof streams;
+                commitResults(validStreams, [], { from: "febbox", data: data });
                 setPendingTasks((p) => p - 1);
             })(),
 
@@ -218,9 +242,6 @@ export default function PlayerPage({ params }: MovieProps) {
                                 streams.map(async (s: any) => (await validateStream(s) ? s : null))
                             )).filter(Boolean) as typeof streams;
                             commitResults(validStreams, [], { from: "vyla-" + source, data: vyla });
-                            if (validStreams.length > 0 && videoLoading && !currentStream?.label?.startsWith("Vyla")) {
-                                setCurrentStream(validStreams[0]);
-                            }
                             setPendingTasks((p) => p - 1);
                         } catch (error) {
                             console.error(`Error fetching Vyla source ${source}:`, error);
@@ -419,21 +440,6 @@ export default function PlayerPage({ params }: MovieProps) {
         setAllCaptions(dedupedCaptions);
     }
 
-    function loadDummy() {
-        const dummyVTT = `WEBVTT
-
-00:00:00.000 --> 01:00:00.000
-Example Caption
-`;
-        const allstream = ([{ uuid: randomUUID(), label: "Dummy Stream", type: "hls", url: "https://vyla-api.pages.dev/api?url=https%3A%2F%2Ffast.randomspeedster.com%2FhSFaX1dkOAqCd1g24uJ16AoooOX3ppgaWv0Nz2pwxXjFb53ZKjtQhmD3oSI9_cy4jkJToqE43AjZ9wtWWSrb-i0D4-xyByRhB-dHPBgTnBUja-lk_c08zdmCe5Sk12ZxT2Hzr1PveHelGeFVm6SMhcVPLroEYZIGMinLPkpdx1iyzjl6PvCiq0gxWYDdy4NDSPsDRsy9WFP9UD5EMMA2U8dCuc1RCLJjArDUK8Gt1szyc93tWZTWRpHWTclTXyuvkZA8l7oPfLyQvIO0IDdW_cCDLQcfZYJNbrqnV_CypmKstFqESZA0togQpp05vI9eL0qHpHQUn9vwNTAi3C04LIqivfO2evgEwZPMpJTSs9UM6mkAlA-F8q27xjXkxDuNlPv2wUhMLae6gCrJFIiT_Q-IwVhjmM-3UfO3LOXz8ENGu0NsvrNFBix353VG12iGuLeFd8F7kxnP4caM-4rkhj4Ay_w-LtQ3Zwqyr1XWKaZJRdFxpunv1N21r5RW2fDoJ6rTx7hF8AHo55hNoOD--JWueBW2UPmmHQB0Wno1jGvGoFl7olxdw3N8_C75EnsExjbx-tg2wHCzXacxh_8ctQKbHB8M67R4BDJbvVK0mQIA%2Findex.m3u8&vy=1" }]);
-        const blob = new Blob([dummyVTT], { type: "text/vtt" });
-        const url = URL.createObjectURL(blob);
-        setAllCaptions([{ type: "vtt", label: "Example Caption", language: "en", url, uuid: randomUUID() }]);
-        setAllFinalDatas([{ from: "febbox", data: { streams: {}, subtitles: {} } }]);
-        setCurrentStream(allstream[0]);
-        setAllStreams(allstream);
-    }
-
     useEffect(() => {
         if (tmdbData) {
             fetchContent();
@@ -554,6 +560,15 @@ Example Caption
                 setCurrentTime(video.currentTime);
             }
         }
+        //,/. (</>) for frame back/forward
+        if (e.code === "Comma" || e.code === "Period") {
+            e.preventDefault();
+            const video = videoRef.current;
+            if (video) {
+                video.currentTime += e.code === "Comma" ? -0.04 : 0.04;
+                setCurrentTime(video.currentTime);
+            }
+        }
     }
 
 
@@ -644,6 +659,7 @@ Example Caption
                                         setCurrentTime(video.currentTime);
                                     }
                                 }}
+                                step={0.1}
                                 disabled={videoLoading}
                                 sx={{
                                     color: 'primary.main',
@@ -715,10 +731,24 @@ Example Caption
                                                             setVideoLoading(true);
                                                             setManualServer(true);
                                                         }}
+                                                        sx={{
+                                                            position: "relative",
+                                                        }}
                                                     >
-                                                        <ListItemButton selected={currentStream?.uuid === stream.uuid}>
+                                                        <ListItemButton selected={currentStream?.uuid === stream.uuid} sx={{
+                                                            // cap text to 1 line with ellipsis
+                                                            whiteSpace: "nowrap",
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
+                                                            width: "100%",
+                                                        }}>
                                                             <i className={`fas fa-${stream.type === "hls" ? "stream" : "file-video"}`} style={{ marginRight: "8px" }}></i>
-                                                            {stream.label}
+                                                            <span style={{
+                                                                whiteSpace: "nowrap",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                width: "100%",
+                                                            }}>{stream.label}</span>
                                                         </ListItemButton>
                                                         <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
                                                             if (activeDownload) {
