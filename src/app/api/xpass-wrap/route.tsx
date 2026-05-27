@@ -100,7 +100,7 @@ export async function GET(req: Request) {
   const headers = {
     ...XPASS_HEADERS,
     referer: `${BASE}/e/${type}/${id}?autostart=true`,
-    cookie: `cf_clearance=yhLgsM0yeaYM2i_T8nLka.O6cmB_ZN5qLxzB5rYWk5g-1779760260-1.2.1.1-EsXYrEHjes2Kw6F3bk82HAPDH4LQhX7YowwOZbry.nwoquyShBJXZTCkLI_CBt5gvrRMRIjmMgUHKc0CyhNXcwWI7gfnMPj4TY9R0tQnP2iRp1cnRUe06uEmLngENZ73O22Ll4_skGnSa.9O_fEKFY5LoGs.1qFLIoq51mhSk0XfdoFSkmSdWbO3ygor3NkyvqkByHfrkSbhmALd82wOhFIiLNxHGtMk2BZ2i9hxdHcSKd9pXrgQX28auJ1_58UOVVYxqKfTvjEQbXk5r0akRL5698C9R4Zy1drS04YBKIrXJtgpEgolIuxwuFzfMiX7NC5yqUfmOCZ2AN33w4VKVw; auth_token=b9d3ed43504d2b9e3e972b5d5df6db5a18a86fab6a060db96f454ba3d38d151f`
+    cookie: `auth_token=b9d3ed43504d2b9e3e972b5d5df6db5a18a86fab6a060db96f454ba3d38d151f`
   };
 
   try {

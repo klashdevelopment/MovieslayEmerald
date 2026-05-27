@@ -96,7 +96,7 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     }
 }
 
-const sources = ['febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass'] as const;
+const sources = ['febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -177,7 +177,6 @@ export default function PlayerPage({ params }: MovieProps) {
             })(),
 
             // Febbox but we did the wrapper
-            // Fetch /api/febbox-wrap?type=movie&query=NAME | /api/febbox-wrap?type=tv&query=NAME&season=SEASON&episode=EPISODE -> {sources: [{type, file, label}]}
             (async () => {
                 const type = playerData!.type === "movie" ? "movie" : "tv";
                 const name = (playerData!.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) || "";
@@ -198,6 +197,71 @@ export default function PlayerPage({ params }: MovieProps) {
                 )).filter(Boolean) as typeof streams;
                 commitResults(validStreams, [], { from: "febbox", data: data });
                 setPendingTasks((p) => p - 1);
+            })(),
+
+            // Lookmovies
+            (async () => {
+                const tmdbId = tmdbData?.id;
+                if (!tmdbId) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const res = await fetch(`/api/lookmovies-wrap?name=${encodeURIComponent(name)}&tmdbId=${tmdbId}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`);
+                if (!res.ok) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const data = await res.json();
+                if(!data?.source?.url) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const stream = {
+                    label: `Lookmovies ${data.source.quality}`,
+                    type: data.source.url.includes(".m3u8") ? "hls" : "mp4",
+                    url: data.source.url,
+                    uuid: randomUUID(),
+                };
+                const valid = await validateStream(stream);
+                if (valid) {
+                    commitResults([stream], [], { from: "lookmovies", data });
+                }
+            })(),
+
+            // Lmscript
+            (async () => {
+                const tmdbId = tmdbData?.id;
+                if (!tmdbId) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const res = await fetch(`/api/lmscript-wrap?name=${encodeURIComponent(name)}&tmdbId=${tmdbId}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`);
+                if (!res.ok) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const data = await res.json();
+                if(!data?.source?.url) {
+                    setPendingTasks((p) => p - 1);
+                    return;
+                }
+                const stream = {
+                    label: `Lmscript ${data.source.quality}`,
+                    type: data.source.url.includes(".m3u8") ? "hls" : "mp4",
+                    url: data.source.url,
+                    uuid: randomUUID(),
+                };
+                const subtitles = (data.subtitles ?? []).map((sub: any) => ({
+                    type: sub.type,
+                    label: "LMS " + sub.language + '(' + sub.label + ')',
+                    url: `/api/subtitle-wrap?url=${encodeURIComponent(sub.url)}`,
+                    language: sub.language,
+                    uuid: randomUUID(),
+                }));
+                const valid = await validateStream(stream);
+                if (valid) {
+                    commitResults([stream], subtitles, { from: "lmscript", data });
+                }
             })(),
 
             // Vyla
