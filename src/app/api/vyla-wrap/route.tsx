@@ -18,9 +18,10 @@ export async function GET(request: Request) {
     const e = searchParams.get("e");
     const type = (searchParams.get("type") as "movie" | "tv") || "tv";
     const source = searchParams.get("source");
+    const timeout = searchParams.get("timeout");
 
     try {
-        const data = await getVyla(id as string, type, s, e, source);
+        const data = await getVyla(id as string, type, s, e, source, timeout);
         return NextResponse.json(data);
     } catch (error: any) {
         const msg = error.message === 'Missing parameters' ? 'Missing parameters' : error.message;

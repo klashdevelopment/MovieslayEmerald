@@ -1,7 +1,12 @@
 export class VylaAPI {
-    static async search(tmdbId: string, type: 'tv' | 'movie', source?: string|undefined, season?: number|undefined, episode?: number|undefined) {
+    static async search(tmdbId: string, type: 'tv' | 'movie', source?: {
+        label: string;
+        key: string;
+        timeout: number;
+    }|undefined, season?: number|undefined, episode?: number|undefined) {
         const params = new URLSearchParams({ id: tmdbId, type });
-        if (source) params.append("source", source);
+        if (source) params.append("source", source.key);
+        if (source) params.append("timeout", source.timeout.toString());
         if (season) params.append("s", season.toString());
         if (episode) params.append("e", episode.toString());
 

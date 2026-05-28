@@ -100,7 +100,7 @@ export async function GET(req: Request) {
   const headers = {
     ...XPASS_HEADERS,
     referer: `${BASE}/e/${type}/${id}?autostart=true`,
-    cookie: `auth_token=b9d3ed43504d2b9e3e972b5d5df6db5a18a86fab6a060db96f454ba3d38d151f`
+    cookie: `auth_token=8f8926934fc9e4177dd96a8f0ab1733988d767df411f97684abe5aafb58f7324`
   };
 
   try {

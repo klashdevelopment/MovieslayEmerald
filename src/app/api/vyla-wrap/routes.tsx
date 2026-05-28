@@ -4,28 +4,33 @@ export async function getVylaSources(): Promise<any[]> {
     if (sourcesCache && sourcesCache.expiresAt > Date.now()) {
         return sourcesCache.data;
     }
-    const response = await fetch(`https://missourimonster-vyla.hf.space/api/health`, {
+    // vyla if you REALLY really want my small site to stop pls just contact me @gavingogaming on discord
+    // u guys have a great streaming service so im happy to take down this source
+    
+    const response = await fetch(`https://missourimonster-stopusingthislink4urproject.hf.space/api?sources_meta`, {
         headers: { "Cache-Control": "public, max-age=3600" }
     });
     if (!response.ok) throw new Error(`Error fetching health: ${response.statusText}`);
     const data = await response.json();
-    const sources = Object.entries(data.sources)
-        .filter(([_, info]: any) => info.ok)
-        .map(([name, _]: any) => name);
+    const sources = (data.sources || []).map((source: any) => ({
+        label: source.label,
+        key: source.key,
+        timeout: source.timeout || 30000,
+    }));
     sourcesCache = { data: sources, expiresAt: Date.now() + 3600000 };
     return sources;
 }
 
 export async function getVylaSubtitles(id: string, type: "movie" | "tv" = "tv", s?: string | null, e?: string | null) {
     const url = type === "movie"
-        ? `https://missourimonster-vyla.hf.space/api/subtitles/movie/${id}`
-        : `https://missourimonster-vyla.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
+        ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/subtitles/movie/${id}`
+        : `https://missourimonster-stopusingthislink4urproject.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Error fetching subtitles: ${response.statusText}`);
     return response.json();
 }
 
-export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: string | null, e?: string | null, source?: string | null) {
+export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: string | null, e?: string | null, source?: string | null, timeout?: string | null) {
     if (!id || (type === "tv" && (!s || !e))) {
         throw new Error("Missing parameters");
     }
@@ -33,14 +38,20 @@ export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: strin
         return getVylaSubtitles(id, type, s, e);
     }
     let url = type === "movie"
-        ? `https://missourimonster-vyla.hf.space/api/movie?id=${id}`
-        : `https://missourimonster-vyla.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
+        ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/movie?id=${id}`
+        : `https://missourimonster-stopusingthislink4urproject.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
     if (source) {
         url = type === "movie"
-            ? `https://missourimonster-vyla.hf.space/api/test/${id}?source=${source}`
-            : `https://missourimonster-vyla.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
+            ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/test/${id}?source=${source}`
+            : `https://missourimonster-stopusingthislink4urproject.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
     }
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36 MovieslayDotCom/PleaseContactMe OnDiscord/gavingogaming",
+            ...(timeout ? { "X-Timeout": timeout } : {})
+        },
+        signal: timeout ? AbortSignal.timeout(parseInt(timeout)) : undefined,
+    });
     if (!response.ok) throw new Error(`Error fetching ${url}: ${response.statusText}`);
     return response.json();
 }

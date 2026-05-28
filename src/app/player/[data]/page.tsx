@@ -296,7 +296,7 @@ export default function PlayerPage({ params }: MovieProps) {
                             if (!vyla || !vyla.url) return;
                             const streams = [
                                 {
-                                    label: `Vyla ${vyla.source} / ${source}`,
+                                    label: `Vyla ${source.label} / ${source.key}`,
                                     type: vyla.url.includes(".m3u8") ? "hls" : "mp4",
                                     url: vyla.url,
                                     uuid: randomUUID(),
@@ -305,10 +305,10 @@ export default function PlayerPage({ params }: MovieProps) {
                             const validStreams = (await Promise.all(
                                 streams.map(async (s: any) => (await validateStream(s) ? s : null))
                             )).filter(Boolean) as typeof streams;
-                            commitResults(validStreams, [], { from: "vyla-" + source, data: vyla });
+                            commitResults(validStreams, [], { from: "vyla-" + source.key, data: vyla });
                             setPendingTasks((p) => p - 1);
                         } catch (error) {
-                            console.error(`Error fetching Vyla source ${source}:`, error);
+                            console.error(`Error fetching Vyla source ${source.key}:`, error);
                         }
                     })(source);
                 }
