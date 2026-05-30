@@ -4,10 +4,8 @@ export async function getVylaSources(): Promise<any[]> {
     if (sourcesCache && sourcesCache.expiresAt > Date.now()) {
         return sourcesCache.data;
     }
-    // vyla if you REALLY really want my small site to stop pls just contact me @gavingogaming on discord
-    // u guys have a great streaming service so im happy to take down this source
-    
-    const response = await fetch(`https://missourimonster-stopusingthislink4urproject.hf.space/api?sources_meta`, {
+    // Vyla is literally the GOAT thank you SO much
+    const response = await fetch(`https://missourimonster-movieslay.hf.space/api?sources_meta`, {
         headers: { "Cache-Control": "public, max-age=3600" }
     });
     if (!response.ok) throw new Error(`Error fetching health: ${response.statusText}`);
@@ -23,8 +21,8 @@ export async function getVylaSources(): Promise<any[]> {
 
 export async function getVylaSubtitles(id: string, type: "movie" | "tv" = "tv", s?: string | null, e?: string | null) {
     const url = type === "movie"
-        ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/subtitles/movie/${id}`
-        : `https://missourimonster-stopusingthislink4urproject.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
+        ? `https://missourimonster-movieslay.hf.space/api/subtitles/movie/${id}`
+        : `https://missourimonster-movieslay.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Error fetching subtitles: ${response.statusText}`);
     return response.json();
@@ -38,12 +36,12 @@ export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: strin
         return getVylaSubtitles(id, type, s, e);
     }
     let url = type === "movie"
-        ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/movie?id=${id}`
-        : `https://missourimonster-stopusingthislink4urproject.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
+        ? `https://missourimonster-movieslay.hf.space/api/movie?id=${id}`
+        : `https://missourimonster-movieslay.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
     if (source) {
         url = type === "movie"
-            ? `https://missourimonster-stopusingthislink4urproject.hf.space/api/test/${id}?source=${source}`
-            : `https://missourimonster-stopusingthislink4urproject.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
+            ? `https://missourimonster-movieslay.hf.space/api/test/${id}?source=${source}`
+            : `https://missourimonster-movieslay.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
     }
     const response = await fetch(url, {
         headers: {
