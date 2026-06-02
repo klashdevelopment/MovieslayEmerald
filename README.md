@@ -16,7 +16,8 @@ pnpm start # prod
 - Save watch progress
 - Custom PiP popup
 - Profiles
-
+- Move webtorrent middleman to Ecli vps app
+- Add webtorrent database
 
 ### AI and components
 
