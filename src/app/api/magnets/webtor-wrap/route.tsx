@@ -78,7 +78,8 @@ export async function GET(request: NextRequest) {
     if (streams) {
         const responses = streams.map((stream: any) => ({
             label: stream.name + ' - ' + stream.behaviorHints?.filename,
-            magnet: buildMagnetURI({ infoHash: stream.behaviorHints?.infoHash, name: stream.behaviorHints?.filename, sources: stream.sources}),
+            magnet: buildMagnetURI({ infoHash: stream.infoHash||stream.behaviorHints?.infoHash, name: stream.behaviorHints?.filename, sources: stream.sources}),
+            // UUID is generated on the client side.
         }))
         return new Response(JSON.stringify(responses), {
             headers: { "Content-Type": "application/json" },

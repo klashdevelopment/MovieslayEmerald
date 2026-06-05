@@ -78,25 +78,48 @@ function URLPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
 async function validateStream(stream: { type: string; url: string }): Promise<boolean> {
     try {
         if (stream.type === "hls") {
-            // for m3u8, fetch and check it's actually a playlist
             const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
             if (!res.ok) return false;
             const text = await res.text();
             return text.includes("#EXTM3U");
-            // return true;
         } else {
-            // for mp4, just check the response is ok and isn't 'no'
-            const res = await fetch(stream.url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
-            if (!res.ok) return false;
-            const ct = res.headers.get("content-type") ?? "";
-            return ct.includes("video") || ct.includes("octet-stream");
+            return await probeVideoUrl(stream.url);
         }
     } catch {
         return false;
     }
 }
 
-const sources = ['dlpeachify', 'febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+async function validateDownloadable(url: string): Promise<boolean> {
+    return probeVideoUrl(url);
+}
+
+async function probeVideoUrl(url: string): Promise<boolean> {
+    // Try HEAD first (cheap), fall back to a 1-byte GET range request
+    // Many CDNs reject HEAD with 405 but accept range GETs just fine
+    for (const req of [
+        () => fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) }),
+        () => fetch(url, { method: "GET", headers: { Range: "bytes=0-0" }, signal: AbortSignal.timeout(5000) }),
+    ]) {
+        try {
+            const res = await req();
+            // 206 Partial Content is the ideal response to a range request
+            if (res.status === 206 || res.ok) {
+                const ct = res.headers.get("content-type") ?? "";
+                // Some servers return no content-type on HEAD; treat that as a pass
+                // since we already know the status was good
+                if (!ct || ct.includes("video") || ct.includes("octet-stream")) return true;
+            }
+            // 405/501 = HEAD not allowed, try next strategy
+            if (res.status !== 405 && res.status !== 501) break;
+        } catch {
+            break;
+        }
+    }
+    return false;
+}
+
+const sources = ['webtormagnets', 'dlpeachify', 'febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -112,6 +135,8 @@ export default function PlayerPage({ params }: MovieProps) {
     const [currentStream, setCurrentStream] = useState<{ label: string; type: string; url: string, uuid: string } | null>(null);
     const [pendingTasks, setPendingTasks] = useState<number>(sources.length);
     const [pendingTasksMax, setPendingTasksMax] = useState<number>(sources.length);
+
+    const [downloadableFiles, setDownloadableFiles] = useState<{ label: string; url?: string, magnet?: string, uuid: string }[]>([]);
 
     async function fetchContent() {
         setPendingTasks(sources.length);
@@ -146,6 +171,10 @@ export default function PlayerPage({ params }: MovieProps) {
             }
             setAllStreams([...allStreams]);
             setAllFinalDatas([...allFinalDatas]);
+        }
+
+        function commitDownloadableFiles(newFiles: { label: string; url?: string, magnet?: string, uuid: string }[]) {
+            setDownloadableFiles((prev) => [...prev, ...newFiles]);
         }
 
         const tasks = [
@@ -281,17 +310,45 @@ export default function PlayerPage({ params }: MovieProps) {
                     const data = await res.json();
                     const streams = (data.sources ?? []).map((s: any) => ({
                         label: `DLPeachify ${s.label}`,
-                        type: s.url.includes(".m3u8") ? "hls" : "mp4",
                         url: s.url,
                         uuid: randomUUID(),
                     }));
-                    const validStreams = (await Promise.all(
-                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                    const validDownloads = (await Promise.all(
+                        streams.map(async (s: any) => (await validateDownloadable(s.url) ? s : null))
                     )).filter(Boolean) as typeof streams;
-                    commitResults(validStreams, [], { from: "dlpeachify", data });
+                    commitResults(validDownloads.map((s: any) => ({ ...s, type: "mp4" })), [], { from: "dlpeachify", data });
                     setPendingTasks((p) => p - 1);
                 } catch (error) {
                     console.error("Error fetching dl.peachify sources:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
+
+            // Webtor magnets
+            (async () => {
+                try {
+                    // /api/magnets/webtor-wrap?tmdbId=12345&season=1&episode=1
+                    const tmdbId = tmdbData?.id;
+                    if (!tmdbId) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const res = await fetch(`/api/magnets/webtor-wrap?tmdbId=${tmdbId}${playerData?.season ? `&season=${playerData.season}` : ""}${playerData?.episode ? `&episode=${playerData.episode}` : ""}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+
+                    const data = await res.json();
+                    const magnets = (data ?? []).map((m: any) => ({
+                        label: `${m.label}`,
+                        magnet: m.magnet,
+                        uuid: randomUUID(),
+                    }));
+                    commitDownloadableFiles(magnets);
+                    setPendingTasks((p) => p - 1);
+                } catch (error) {
+                    console.error("Error fetching Webtor magnets:", error);
                     setPendingTasks((p) => p - 1);
                 }
             })(),
@@ -813,9 +870,10 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         Back
                                                     </ListItemButton>
                                                 </ListItem>
-                                                <ListItem>
-                                                    <i className="fas fa-database" style={{ marginRight: "8px" }}></i>
-                                                    Select Stream
+                                                <ListItem style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <i className="fas fa-database" style={{ flex: '0 0 auto' }}></i>
+                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}>Select Stream</span>
+                                                    <div style={{ height: '1px', flex: '1 1 auto', backgroundColor: '#ccd7e190' }}></div>
                                                 </ListItem>
                                                 {allStreams.map((stream) => (
                                                     <ListItem
@@ -846,7 +904,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                                 width: "100%",
                                                             }}>{stream.label}</span>
                                                         </ListItemButton>
-                                                        <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
+                                                        {/* <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
                                                             if (activeDownload) {
                                                                 if (activeDownload.uuid === stream.uuid) {
                                                                     activeDownload.downloader.cancel();
@@ -869,6 +927,61 @@ export default function PlayerPage({ params }: MovieProps) {
                                                             {activeDownload?.uuid === stream.uuid ? <CircularProgress size="sm" determinate value={activeDownload?.downloader?.progress || 0} style={{ marginRight: "0px", scale: 1 }}>
                                                                 {activeDownload.downloader.progress.toFixed(1)}
                                                             </CircularProgress> : <i className="fas fa-download"></i>}
+                                                        </Button> */}
+                                                    </ListItem>
+                                                ))}
+                                                <ListItem style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <i className="fas fa-file-video" style={{ flex: '0 0 auto' }}></i>
+                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}>File Downloads</span>
+                                                    <div style={{ height: '1px', flex: '1 1 auto', backgroundColor: '#ccd7e190' }}></div>
+                                                </ListItem>
+                                                <ListItem>
+                                                    <ListItemButton onClick={() => {
+                                                        window.open('https://www.qbittorrent.org/download', '_blank');
+                                                    }}>
+                                                        <img src={'/qbittorrent.svg'} style={{ marginRight: "8px", height: '20px' }} height="20px" />
+                                                        <span style={{
+                                                            whiteSpace: "nowrap",
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
+                                                            width: "100%",
+                                                        }}>Get qBittorrent for magnets</span>
+                                                    </ListItemButton>
+                                                </ListItem>
+                                                {allStreams.filter(s => s.type!=='hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid } as {label: string, url?: string, magnet?: string, uuid: string})).concat(downloadableFiles).filter(f => f.url || f.magnet).sort(
+                                                    // files over magnets
+                                                    (a, b) => {
+                                                        if (a.url && !b.url) return -1;
+                                                        if (!a.url && b.url) return 1;
+                                                        return 0;
+                                                    }
+                                                ).map((file) => (
+                                                    <ListItem
+                                                        key={file.uuid || file.url || file.magnet || file.label}
+                                                    >
+                                                        <i className={`fas fa-${file.magnet ? 'magnet' : 'file-video'}`} style={{ marginRight: "8px" }}></i>
+                                                        <span style={{
+                                                            whiteSpace: "nowrap",
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
+                                                            width: "100%",
+                                                        }}>{file.label}</span>
+                                                        <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
+                                                            if (file.url) {
+                                                                const a = document.createElement("a");
+                                                                a.href = file.url;
+                                                                a.download = `${(
+                                                                    tmdbData ? (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) : "media"
+                                                                ) || "file"}_${file.label}-Movieslay.${file.url.split('.').pop()}`;
+                                                                document.body.appendChild(a);
+                                                                a.click();
+                                                                a.remove();
+                                                            } else if (file.magnet) {
+                                                                navigator.clipboard.writeText(file.magnet);
+                                                                alert("Magnet link copied to clipboard");
+                                                            }
+                                                        }} style={{ marginLeft: "8px" }}>
+                                                            <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
                                                         </Button>
                                                     </ListItem>
                                                 ))}
