@@ -6,18 +6,19 @@ Movieslay Emerald is a successor to the Movieslay webapp. We're an all in one ro
 Files for the Movieslay desktop and mobile apps are included too - supports iOS, Windows, and macOS.
 
 ## Hosting
+You need to input at minimum a TMDB api key (get it free [here](https://docs.pstream.net/client/tmdb/)) in the .env. An example env is provided. A FEDDB key is the 'ui' cookie on febbox, which you can see a video to get [here](https://vimeo.com/1059834885/c3ab398d42?fl=pl&fe=ti).
+
 ```bash
-pnpm i
-pnpm run dev # dev
-pnpm start # prod
+npm i
+npm run dev # dev
+npm start # prod
 ```
 
 ### TODO
 - Save watch progress
 - Custom PiP popup
 - Profiles
-- Move webtorrent middleman to Ecli vps app
-- Add webtorrent database
+- Add webtorrent streamer
 
 ### AI and components
 

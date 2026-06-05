@@ -96,7 +96,7 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
     }
 }
 
-const sources = ['febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+const sources = ['dlpeachify', 'febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -212,7 +212,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     return;
                 }
                 const data = await res.json();
-                if(!data?.source?.url) {
+                if (!data?.source?.url) {
                     setPendingTasks((p) => p - 1);
                     return;
                 }
@@ -241,7 +241,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     return;
                 }
                 const data = await res.json();
-                if(!data?.source?.url) {
+                if (!data?.source?.url) {
                     setPendingTasks((p) => p - 1);
                     return;
                 }
@@ -261,6 +261,38 @@ export default function PlayerPage({ params }: MovieProps) {
                 const valid = await validateStream(stream);
                 if (valid) {
                     commitResults([stream], subtitles, { from: "lmscript", data });
+                }
+            })(),
+
+            // dl.peachify.top - This one is Peachify's download route so its only mp4/mkv.
+            // Vyla handles their streaming api automatically.
+            (async () => {
+                try {
+                    const tmdbId = tmdbData?.id;
+                    if (!tmdbId) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const res = await fetch(`/api/dl-peachify-wrap?id=${tmdbId}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const data = await res.json();
+                    const streams = (data.sources ?? []).map((s: any) => ({
+                        label: `DLPeachify ${s.label}`,
+                        type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                        url: s.url,
+                        uuid: randomUUID(),
+                    }));
+                    const validStreams = (await Promise.all(
+                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                    )).filter(Boolean) as typeof streams;
+                    commitResults(validStreams, [], { from: "dlpeachify", data });
+                    setPendingTasks((p) => p - 1);
+                } catch (error) {
+                    console.error("Error fetching dl.peachify sources:", error);
+                    setPendingTasks((p) => p - 1);
                 }
             })(),
 
@@ -394,7 +426,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     const sources = sourcesData.sources ?? [];
                     setPendingTasks((p) => p + sources.length - 1); // -1 because we already have one pending for the initial fetch
                     setPendingTasksMax((p) => p + sources.length - 1);
-                    for (const source of sources.filter((s: any) => s.url&&s.id)) {
+                    for (const source of sources.filter((s: any) => s.url && s.id)) {
                         (async (source) => {
                             try {
                                 const res = await fetch(`/api/xpass-wrap?type=${type}&id=${id}&season=${season}&episode=${episode}&source=${source.id}`);
@@ -642,7 +674,7 @@ export default function PlayerPage({ params }: MovieProps) {
     function startDownload(stream: { label: string; type: string; url: string; uuid: string }) {
         if (activeDownload) return; // only one at a time for simplicity
 
-        if(stream.type !== "hls") {
+        if (stream.type !== "hls") {
             // for direct mp4 links, just open the url in a new tab
             const a = document.createElement("a");
             a.href = stream.url;
@@ -816,7 +848,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         </ListItemButton>
                                                         <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
                                                             if (activeDownload) {
-                                                                if(activeDownload.uuid === stream.uuid) {
+                                                                if (activeDownload.uuid === stream.uuid) {
                                                                     activeDownload.downloader.cancel();
                                                                     e.stopPropagation();
                                                                     return;
