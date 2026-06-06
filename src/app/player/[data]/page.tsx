@@ -635,6 +635,44 @@ export default function PlayerPage({ params }: MovieProps) {
 
     const [showControlsTimeout, setShowControlsTimeout] = useState<NodeJS.Timeout | null>(null);
 
+    const [volumePercent, setVolumePercent] = useState(100); // 50-200
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const gainNodeRef = useRef<GainNode | null>(null);
+    const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+
+    const [volSliderState, setVolSliderState] = useState<string|null>(null);
+    
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        
+        if (volumePercent > 100) {
+            // For volumes > 100, use Web Audio API with GainNode
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            const ctx = audioContextRef.current;
+            if (!mediaSourceRef.current) {
+                mediaSourceRef.current = ctx.createMediaElementSource(video);
+            }
+            
+            if (!gainNodeRef.current) {
+                gainNodeRef.current = ctx.createGain();
+                mediaSourceRef.current.connect(gainNodeRef.current);
+                gainNodeRef.current.connect(ctx.destination);
+            }
+            
+            gainNodeRef.current.gain.value = volumePercent / 100;
+            video.volume = 1;
+        } else {
+            // For volumes <= 100, use native video volume
+            video.volume = volumePercent / 100;
+            if (gainNodeRef.current) {
+                gainNodeRef.current.gain.value = 1;
+            }
+        }
+    }, [volumePercent]);
+
     const videoProps: React.VideoHTMLAttributes<HTMLVideoElement> = {
         controls: false,
         autoPlay: true,
@@ -648,7 +686,7 @@ export default function PlayerPage({ params }: MovieProps) {
             }
             setShowControlsTimeout(setTimeout(() => {
                 setShowControls(false);
-            }, 3000));
+            }, 5000));
         },
         onTimeUpdate: (e) => {
             setCurrentTime(e.currentTarget.currentTime);
@@ -798,7 +836,8 @@ export default function PlayerPage({ params }: MovieProps) {
                         ) : (
                             <URLPlayer {...videoProps} videoRef={videoRef} url={currentStream.url} subtitleEnabled={currentCaption} />
                         )}
-                        <div style={{
+                        <div
+                        style={{
                             position: "absolute", bottom: "0", left: "0", height: "50px", display: `${showControls ? "flex" : "none"
                                 }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
                         }}>
@@ -852,6 +891,56 @@ export default function PlayerPage({ params }: MovieProps) {
                                     justifyContent: "center",
                                     height: "30px",
                                 }}>
+                                    {/* Volume */}
+                                    <style>{`
+                                        .volume-control {
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 8px;
+                                            padding-right: 10px;
+                                        }
+                                        .volume-slider {
+                                            width: 0;
+                                            overflow: hidden;
+                                            transition: width 0.3s ease;
+                                        }
+                                        .volume-control:hover .volume-slider {
+                                            width: 100px;
+                                        }
+                                    `}</style>
+                                    <div className="volume-control">
+                                        <Tooltip title={`${volumePercent}%`} variant={'plain'}>
+                                            <i className={`control-icon fas fa-volume-${volumePercent === 0 ? "xmark" : (volumePercent <= 50 ? "down" : "up")}`} onClick={() => {
+                                                setVolumePercent(volumePercent === 0 ? 100 : 0);
+                                            }}></i>
+                                        </Tooltip>
+                                        <div className="volume-slider">
+                                            <Slider
+                                                size="sm"
+                                                value={volumePercent}
+                                                onChange={(_e, value) => {
+                                                    setVolumePercent(value as number);
+                                                }}
+                                                step={1}
+                                                min={0}
+                                                max={200}
+                                                sx={{
+                                                    width: 100,
+                                                    color: 'primary.main',
+                                                    '& .MuiSlider-thumb': {
+                                                        width: 12,
+                                                        height: 12,
+                                                        backgroundColor: '#fff',
+                                                        border: '2px solid currentColor',
+                                                    },
+                                                    '& .MuiSlider-rail': {
+                                                        opacity: 0.3,
+                                                        backgroundColor: '#fff',
+                                                    },
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                     <Tooltip title="Select Stream" variant={'plain'}>
                                         <i className="control-icon fas fa-server" onClick={() => setShowServerSelect(!showServerSelect)}></i>
                                     </Tooltip>
