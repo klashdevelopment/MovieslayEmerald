@@ -119,7 +119,7 @@ async function probeVideoUrl(url: string): Promise<boolean> {
     return false;
 }
 
-const sources = ['flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+const sources = ['a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -263,6 +263,33 @@ export default function PlayerPage({ params }: MovieProps) {
                 const valid = await validateStream(stream);
                 if (valid) {
                     commitResults([stream], subtitles, { from: "lmscript", data });
+                }
+            })(),
+
+            // a111xyz
+            (async () =>  {
+                // /api/a111xyz?name&year(&s)(&e)
+                try {
+                    const res = await fetch(`/api/a111xyz?name=${encodeURIComponent(name)}&year=${year}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const data = await res.json();
+                    const streams = (data.files ?? []).map((f: any) => ({
+                        label: `a111xyz ${f.label} (Slower)`,
+                        type: "mp4",
+                        url: f.url,
+                        uuid: randomUUID(),
+                    }));
+                    // const validStreams = (await Promise.all(    
+                    //     streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                    // )).filter(Boolean) as typeof streams;
+                    commitResults(streams, [], { from: "a111xyz", data });
+                } catch (error) {
+                    console.error("Error fetching a111xyz sources:", error);
+                } finally {
+                    setPendingTasks((p) => p - 1);
                 }
             })(),
 
@@ -1185,21 +1212,23 @@ export default function PlayerPage({ params }: MovieProps) {
                                                             position: "relative",
                                                         }}
                                                     >
-                                                        <ListItemButton selected={currentStream?.uuid === stream.uuid} sx={{
-                                                            // cap text to 1 line with ellipsis
-                                                            whiteSpace: "nowrap",
-                                                            overflow: "hidden",
-                                                            textOverflow: "ellipsis",
-                                                            width: "100%",
-                                                        }}>
-                                                            <i className={`fas fa-${stream.type === "hls" ? "stream" : "file-video"}`} style={{ marginRight: "8px" }}></i>
-                                                            <span style={{
+                                                        <Tooltip title={`${stream.type.toUpperCase()} ${stream.label}`} placement="left" variant={'plain'} size={'sm'}>
+                                                            <ListItemButton selected={currentStream?.uuid === stream.uuid} sx={{
+                                                                // cap text to 1 line with ellipsis
                                                                 whiteSpace: "nowrap",
                                                                 overflow: "hidden",
                                                                 textOverflow: "ellipsis",
                                                                 width: "100%",
-                                                            }}>{stream.label}</span>
-                                                        </ListItemButton>
+                                                            }}>
+                                                                <i className={`fas fa-${stream.type === "hls" ? "stream" : "file-video"}`} style={{ marginRight: "8px" }}></i>
+                                                                <span style={{
+                                                                    whiteSpace: "nowrap",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    width: "100%",
+                                                                }}>{stream.label}</span>
+                                                            </ListItemButton>
+                                                        </Tooltip>
                                                         {/* <Button variant="outlined" color={"neutral"} size="sm" onClick={(e) => {
                                                             if (activeDownload) {
                                                                 if (activeDownload.uuid === stream.uuid) {
