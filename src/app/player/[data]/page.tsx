@@ -532,10 +532,11 @@ export default function PlayerPage({ params }: MovieProps) {
                         setPendingTasks((p) => p - 1);
                         return;
                     }
-                    const servers: {servers: string[]} = await res.json();
+                    const servers: { servers: string[] } = await res.json();
                     setPendingTasks((p) => p + servers.servers.length - 1);
                     setPendingTasksMax((p) => p + servers.servers.length - 1);
-                    for (const server of servers.servers) {
+
+                    await Promise.all(servers.servers.map(async (server) => {
                         try {
                             const params = new URLSearchParams({
                                 id: playerData!.id,
@@ -544,9 +545,8 @@ export default function PlayerPage({ params }: MovieProps) {
                                 ...(playerData!.episode != null && { e: String(playerData!.episode) }),
                             });
                             const res = await fetch(`/api/flicky-wrap?${params}`);
-                            if (!res.ok) continue;
+                            if (!res.ok) return;
                             const data = await res.json();
-                            // {streams: [url, label]}
                             const streams = (data.streams ?? []).map((s: any) => ({
                                 label: `Flicky ${s.label} / ${server}`,
                                 type: s.url.includes(".m3u8") ? "hls" : "mp4",
@@ -558,17 +558,70 @@ export default function PlayerPage({ params }: MovieProps) {
                             )).filter(Boolean) as typeof streams;
                             commitResults(validStreams, [], { from: "flicky-" + server, data });
                         } catch {
-                            continue;
+                            // swallow per-server errors
                         } finally {
                             setPendingTasks((p) => p - 1);
                         }
-                    }
+                    }));
                 } catch (error) {
                     console.error("Error fetching Flicky servers:", error);
                     setPendingTasks((p) => p - 1);
                 }
             })(),
 
+            // VidEasy
+            (async () => {
+                try {
+                    const res = await fetch(`/api/videasy-wrap?server=list`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const servers: { servers: { label: string, id: string }[] } = await res.json();
+                    setPendingTasks((p) => p + servers.servers.length - 1);
+                    setPendingTasksMax((p) => p + servers.servers.length - 1);
+
+                    await Promise.all(servers.servers.map(async (server) => {
+                        try {
+                            const params = new URLSearchParams({
+                                id: playerData!.id,
+                                server: server.id,
+                                ...(playerData!.season != null && { s: String(playerData!.season) }),
+                                ...(playerData!.episode != null && { e: String(playerData!.episode) }),
+                            });
+                            const res = await fetch(`/api/videasy-wrap?${params}`);
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            const streams = (data.streams ?? []).map((s: any) => ({
+                                label: `VidEasy ${server.label} ${s.label}`,
+                                type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                                url: s.url,
+                                uuid: randomUUID(),
+                            }));
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+
+                            const subtitles = (data.subtitles ?? []).map((sub: any) => ({
+                                type: sub.type || captionType(sub.url),
+                                label: "VEz " + server.label + ' ' + (sub.langauge ?? ""),
+                                url: `/api/subtitle-wrap?url=${encodeURIComponent(sub.url)}`,
+                                language: sub.language ?? "",
+                                uuid: randomUUID(),
+                            }));
+
+                            commitResults(validStreams, subtitles, { from: "videasy-" + server, data });
+                        } catch {
+                            // swallow per-server errors
+                        } finally {
+                            setPendingTasks((p) => p - 1);
+                        }
+                    }));
+                } catch (error) {
+                    console.error("Error fetching Videasy servers:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
 
             // Vidrock
             (async () => {
@@ -688,7 +741,13 @@ export default function PlayerPage({ params }: MovieProps) {
                             ? `https://api.anyembed.xyz` + await api.genProxyURL(s.url, s.headers)
                             : s.url;
                         const format = (url.includes(".m3u8") ? "hls" : "mp4");
-                        streams.push({ label: `AnyEmbed ${format} ${s.quality} ${btoa(url).substr(0, 5)}`, type: format, url, uuid: randomUUID(), qs: s.quality_score });
+                        streams.push({
+                            label: `AE ${source.provider} ${s.quality} ${btoa(url).substr(-5)}`,
+                            type: format,
+                            url,
+                            uuid: randomUUID(),
+                            qs: s.quality_score
+                        });
                         for (const sub of s.subtitles ?? []) {
                             const subUrl: string = sub.url ?? "";
                             if (!subUrl) continue;
@@ -702,15 +761,18 @@ export default function PlayerPage({ params }: MovieProps) {
                         }
                     }
                 }
+                const uniqueStreamsMap = new Map<string, any>();
+                for (const s of streams) {
+                    if (!uniqueStreamsMap.has(s.url)) {
+                        uniqueStreamsMap.set(s.url, s);
+                    }
+                }
+                const uniqueStreams = Array.from(uniqueStreamsMap.values());
                 const validStreams = (await Promise.all(
-                    streams.map(async s => (await validateStream(s) ? s : null))
+                    uniqueStreams.map(async s => (await validateStream(s) ? s : null))
                 )).filter(Boolean).sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
                 commitResults(validStreams, captions, { from: "anyembed", data: ae });
                 setPendingTasks((p) => p - 1);
-                // since AE usually has good streams,
-                if (validStreams.length > 0 && videoLoading) {
-                    setCurrentStream(validStreams[0]);
-                }
             })(),
         ].map(task =>
             task.finally(() => setPendingTasks((p: number) => p - 1))

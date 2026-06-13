@@ -18,6 +18,7 @@ const XPASS_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7378.102 Safari/537.36",
   "Origin": "https://play.xpass.top",
   "Referrer": "https://play.xpass.top/",
+  "Cookie": "auth_token=de21073d24bca9b50f189b402ac870734cf945f2085cb7e1a4fc453fcfe4f57e"
 };
 
 interface XpassSource {
@@ -100,7 +101,7 @@ export async function GET(req: Request) {
   const headers = {
     ...XPASS_HEADERS,
     referer: `${BASE}/e/${type}/${id}?autostart=true`,
-    cookie: `auth_token=8f8926934fc9e4177dd96a8f0ab1733988d767df411f97684abe5aafb58f7324`
+    cookie: `auth_token=de21073d24bca9b50f189b402ac870734cf945f2085cb7e1a4fc453fcfe4f57e`
   };
 
   try {

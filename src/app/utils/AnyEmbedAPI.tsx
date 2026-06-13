@@ -23,7 +23,7 @@ export class AnyEmbedAPI {
     const params: Record<string, string> = { id: String(mediaId) };
     if (season) params.season = season;
     if (episode) params.episode = episode;
-    params.force_provider = "moviesapi";
+    // params.force_provider = "moviesapi";
     if (season || episode) params.is_tv = "true";
     return this.get(`${BASE_URL}/api/v1/stream/${mediaId}`, params);
   }
