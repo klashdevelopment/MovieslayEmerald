@@ -34,7 +34,7 @@ interface PlayerData {
 }
 
 type FinalData = {
-    from: "febbox" | "anyembed" | "vidrock" | "vyla" | string;
+    from: string;
     data: FebboxReply | any; // FebboxReply is a bit misleading - all apis are parsed to that interface now
 };
 type Caption = {
@@ -119,7 +119,7 @@ async function probeVideoUrl(url: string): Promise<boolean> {
     return false;
 }
 
-const sources = ['webtormagnets', 'dlpeachify', 'febboxpstream', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+const sources = ['flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -178,33 +178,6 @@ export default function PlayerPage({ params }: MovieProps) {
         }
 
         const tasks = [
-            // Febbox but it uses pstream wrapper and barely functions
-            (async () => {
-                const febbox = await FebboxAPI.search(name, year, playerData?.season, playerData?.episode);
-                const streams = [];
-                const captions = [];
-                for (const [res, s] of Object.entries(febbox.streams)) {
-                    if (s) streams.push({ label: `Febbox ${res}`, ...(s as any), uuid: randomUUID() });
-                }
-                for (const [, sub] of Object.entries(febbox.subtitles ?? {})) {
-                    const s = sub as any;
-                    const url: string = s.subtitle_link ?? s.url ?? "";
-                    if (!url) continue;
-                    captions.push({
-                        type: captionType(url),
-                        label: "FB " + (s.subtitle_name ?? s.label ?? "") + '(' + (captions.length + 1) + ')',
-                        language: s.language ?? s.subtitle_name ?? "",
-                        url: `/api/subtitle-wrap?url=${encodeURIComponent(url)}`,
-                        uuid: randomUUID(),
-                    });
-                }
-                const validStreams = (await Promise.all(
-                    streams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean) as typeof streams;
-                commitResults(validStreams, captions, { from: "febboxpstream", data: febbox });
-                setPendingTasks((p) => p - 1);
-            })(),
-
             // Febbox but we did the wrapper
             (async () => {
                 const type = playerData!.type === "movie" ? "movie" : "tv";
@@ -353,6 +326,132 @@ export default function PlayerPage({ params }: MovieProps) {
                 }
             })(),
 
+            // Nomorflix
+            (async () => {
+                const nomorflixRes = await fetch('/api/nomorflix-wrap?type=list');
+                const nomorflixData = await nomorflixRes.json();
+
+                const category = playerData!.type === 'series' ? 'movies_tv' : 'movies_tv'; // anime never used
+                const langSources: Record<string, string[]> = nomorflixData.sources[category];
+                const langs = Object.entries(langSources);
+                setPendingTasks((p) => p + langs.length);
+                setPendingTasksMax((p) => p + langs.length);
+
+                for (const [lang, sources] of langs) {
+                    (async (lang: string, sources: string[]) => {
+                        try {
+                            for (const source of sources) {
+                                try {
+                                    const params = new URLSearchParams({
+                                        type: playerData!.type === 'series' ? 'tv' : 'movie',
+                                        id: playerData!.id,
+                                        source,
+                                        ...(playerData!.season != null && { s: String(playerData!.season) }),
+                                        ...(playerData!.episode != null && { e: String(playerData!.episode) }),
+                                    });
+
+                                    const res = await fetch(`/api/nomorflix-wrap?${params}`);
+                                    if (!res.ok) continue;
+
+                                    const data = await res.json();
+
+                                    const streamsRaw = data.sources.map((s: any, index: number) => ({
+                                        url: s.url,
+                                        label: `Nomorflix ${s.language || lang} / ${source} #${index + 1}`,
+                                        type: s.type || (
+                                            s.url.includes('.m3u8') ? 'hls' : 'mp4'
+                                        ),
+                                        uuid: randomUUID()
+                                    }));
+
+                                    const valid = (await Promise.all(
+                                        streamsRaw.map(async (s: any) => (await validateStream(s) ? s : null))
+                                    )).filter(Boolean) as typeof streamsRaw;
+
+                                    commitResults(valid, [], { from: `nomorflix-${lang}-${source}`, data });
+                                    break;
+                                } catch {
+                                    continue;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching Nomorflix lang ${lang}:`, error);
+                        } finally {
+                            setPendingTasks((p) => p - 1); // always decrement, hit or miss
+                        }
+                    })(lang, sources);
+                }
+            })(),
+
+            // Nomorflix anime
+            (async () => {
+                try {
+                    const mapRes = await fetch(`/api/anime-map?tmdbId=${playerData!.id}`);
+                    if (!mapRes.ok) return;
+
+                    const { anilist_id, malId } = await mapRes.json();
+                    if (!anilist_id) return;
+
+                    const nomorflixRes = await fetch('/api/nomorflix-wrap?type=list');
+                    const nomorflixData = await nomorflixRes.json();
+
+                    const langSources: Record<string, string[]> = nomorflixData.sources.anime;
+                    const langs = Object.entries(langSources);
+
+                    setPendingTasks((p) => p + langs.length);
+                    setPendingTasksMax((p) => p + langs.length);
+
+                    for (const [lang, sources] of langs) {
+                        (async (lang: string, sources: string[]) => {
+                            try {
+                                for (const source of sources) {
+                                    try {
+                                        const params = new URLSearchParams({
+                                            type: 'anime',
+                                            id: String(anilist_id),
+                                            source,
+                                            ...(playerData!.season != null && { s: String(playerData!.season) }),
+                                            ...(playerData!.episode != null && { e: String(playerData!.episode) }),
+                                            ...(!!malId && { mal: String(malId) })
+                                        });
+
+                                        const res = await fetch(`/api/nomorflix-wrap?${params}`);
+                                        if (!res.ok) continue;
+
+                                        const data = await res.json();
+                                        if (!data?.url) continue;
+
+                                        const streamsRaw = data.sources.map((s: any, index: number) => ({
+                                            url: s.url,
+                                            label: `Nomorflix ${s.language || lang} / ${source} #${index + 1}`,
+                                            type: s.type || (
+                                                s.url.includes('.m3u8') ? 'hls' : 'mp4'
+                                            ),
+                                            uuid: randomUUID()
+                                        }));
+
+                                        const valid = (await Promise.all(
+                                            streamsRaw.map(async (s: any) => (await validateStream(s) ? s : null))
+                                        )).filter(Boolean) as typeof streamsRaw;
+
+                                        commitResults(valid, [], { from: `nomorflix-anime-${lang}-${source}`, data });
+                                        break;
+                                    } catch {
+                                        continue;
+                                    }
+                                }
+                            } catch (error) {
+                                console.error(`Error fetching Nomorflix anime lang ${lang}:`, error);
+                            } finally {
+                                setPendingTasks((p) => p - 1);
+                            }
+                        })(lang, sources);
+                    }
+                } catch (error) {
+                    console.error('Error fetching Nomorflix anime:', error);
+                }
+            })(),
+
             // Vyla
             (async () => {
                 // const vyla = await VylaAPI.search(playerData!.id, playerData!.type === 'series' ? 'tv' : 'movie', undefined, playerData!.season, playerData!.episode);
@@ -424,6 +523,52 @@ export default function PlayerPage({ params }: MovieProps) {
                     console.error("Error fetching Vyla subtitles:", error);
                 }
             })(),
+
+            // Flicky
+            (async () => {
+                try {
+                    const res = await fetch(`/api/flicky-wrap?server=list`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const servers: {servers: string[]} = await res.json();
+                    setPendingTasks((p) => p + servers.servers.length - 1);
+                    setPendingTasksMax((p) => p + servers.servers.length - 1);
+                    for (const server of servers.servers) {
+                        try {
+                            const params = new URLSearchParams({
+                                id: playerData!.id,
+                                server,
+                                ...(playerData!.season != null && { s: String(playerData!.season) }),
+                                ...(playerData!.episode != null && { e: String(playerData!.episode) }),
+                            });
+                            const res = await fetch(`/api/flicky-wrap?${params}`);
+                            if (!res.ok) continue;
+                            const data = await res.json();
+                            // {streams: [url, label]}
+                            const streams = (data.streams ?? []).map((s: any) => ({
+                                label: `Flicky ${s.label} / ${server}`,
+                                type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                                url: s.url,
+                                uuid: randomUUID(),
+                            }));
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+                            commitResults(validStreams, [], { from: "flicky-" + server, data });
+                        } catch {
+                            continue;
+                        } finally {
+                            setPendingTasks((p) => p - 1);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching Flicky servers:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
+
 
             // Vidrock
             (async () => {
@@ -640,12 +785,12 @@ export default function PlayerPage({ params }: MovieProps) {
     const gainNodeRef = useRef<GainNode | null>(null);
     const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
-    const [volSliderState, setVolSliderState] = useState<string|null>(null);
-    
+    const [volSliderState, setVolSliderState] = useState<string | null>(null);
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
-        
+
         if (volumePercent > 100) {
             // For volumes > 100, use Web Audio API with GainNode
             if (!audioContextRef.current) {
@@ -655,13 +800,13 @@ export default function PlayerPage({ params }: MovieProps) {
             if (!mediaSourceRef.current) {
                 mediaSourceRef.current = ctx.createMediaElementSource(video);
             }
-            
+
             if (!gainNodeRef.current) {
                 gainNodeRef.current = ctx.createGain();
                 mediaSourceRef.current.connect(gainNodeRef.current);
                 gainNodeRef.current.connect(ctx.destination);
             }
-            
+
             gainNodeRef.current.gain.value = volumePercent / 100;
             video.volume = 1;
         } else {
@@ -837,10 +982,10 @@ export default function PlayerPage({ params }: MovieProps) {
                             <URLPlayer {...videoProps} videoRef={videoRef} url={currentStream.url} subtitleEnabled={currentCaption} />
                         )}
                         <div
-                        style={{
-                            position: "absolute", bottom: "0", left: "0", height: "50px", display: `${showControls ? "flex" : "none"
-                                }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
-                        }}>
+                            style={{
+                                position: "absolute", bottom: "0", left: "0", height: "50px", display: `${showControls ? "flex" : "none"
+                                    }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
+                            }}>
                             <Slider
                                 size="sm"
                                 value={duration ? (currentTime / duration) * 100 : 0}
@@ -1037,7 +1182,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         }}>Get qBittorrent for magnets</span>
                                                     </ListItemButton>
                                                 </ListItem>
-                                                {allStreams.filter(s => s.type!=='hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid } as {label: string, url?: string, magnet?: string, uuid: string})).concat(downloadableFiles).filter(f => f.url || f.magnet).sort(
+                                                {allStreams.filter(s => s.type !== 'hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid } as { label: string, url?: string, magnet?: string, uuid: string })).concat(downloadableFiles).filter(f => f.url || f.magnet).sort(
                                                     // files over magnets
                                                     (a, b) => {
                                                         if (a.url && !b.url) return -1;
