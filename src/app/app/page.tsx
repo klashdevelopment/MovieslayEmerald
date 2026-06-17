@@ -69,7 +69,7 @@ export default function AppPage() {
                         <Button onClick={() => {
                             router.push('/app/ios');
                         }} startDecorator={<i className="fa-solid fab fa-app-store"></i>}>iOS</Button>
-                        <Button disabled startDecorator={<i className="fa-solid fab fa-android"></i>}>Android</Button>
+                        <Button component={"a"} href="/app/movieslay-android.apk" download="movieslay-android.apk" target="_blank" startDecorator={<i className="fa-solid fab fa-android"></i>}>Android</Button>
                         <span style={{ width: '8px', height: '8px' }}>
                         </span>
                         <Button onClick={() => {
