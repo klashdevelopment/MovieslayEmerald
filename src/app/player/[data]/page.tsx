@@ -45,7 +45,6 @@ type Caption = {
     uuid: string;
 };
 
-
 function HLSPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, videoRef: React.RefObject<HTMLVideoElement>, subtitleEnabled?: Caption } & React.VideoHTMLAttributes<HTMLVideoElement>) {
     useEffect(() => {
         if (Hls.isSupported() && videoRef.current) {
