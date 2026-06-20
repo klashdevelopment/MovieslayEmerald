@@ -156,7 +156,7 @@ export function GET(req: Request) {
                                             });
                                         return sources.length ? [({
                                             ...sources[0],
-                                            label: `${sources[0].label} ${file.file_name.slice(-20)}`
+                                            label: `${sources[0].label} ${file.file_name}`
                                         })] : [];
                                     });
                             })).then((results) => {
