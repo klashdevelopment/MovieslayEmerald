@@ -59,7 +59,7 @@ function HLSPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
         }
     }, [url]);
 
-    return <video ref={videoRef} {...props}>
+    return <video x-webkit-airplay="allow" ref={videoRef} {...props}>
         {subtitleEnabled && (
             <track key={'subtitle-' + subtitleEnabled.uuid} label={subtitleEnabled.label} kind="captions" srcLang={subtitleEnabled.language} src={subtitleEnabled.url} default />
         )}
@@ -67,7 +67,7 @@ function HLSPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
 }
 
 function URLPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, videoRef: React.RefObject<HTMLVideoElement>, subtitleEnabled?: Caption }) {
-    return <video ref={videoRef} src={url} {...props}>
+    return <video x-webkit-airplay="allow" ref={videoRef} src={url} {...props}>
         {subtitleEnabled && (
             <track key={'subtitle-' + subtitleEnabled.uuid} label={subtitleEnabled.label} kind="captions" srcLang={subtitleEnabled.language} src={subtitleEnabled.url} default />
         )}
