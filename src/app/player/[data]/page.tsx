@@ -4,7 +4,7 @@ import { getMovies } from "@/app/components/useTMDB";
 import { TMDBMovie } from "@/app/movie/page";
 import { TMDBShow } from "@/app/series/page";
 import { FebboxAPI, FebboxReply } from "@/app/utils/FebboxAPI";
-import { useEffect, useRef, useState } from "react";
+import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { VidrockAPI } from "@/app/utils/VidrockAPI";
 import { AnyEmbedAPI } from "@/app/utils/AnyEmbedAPI";
@@ -266,7 +266,7 @@ export default function PlayerPage({ params }: MovieProps) {
             })(),
 
             // a111xyz
-            (async () =>  {
+            (async () => {
                 // /api/a111xyz?name&year(&s)(&e)
                 try {
                     const res = await fetch(`/api/a111xyz?name=${encodeURIComponent(name)}&year=${year}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`);
@@ -906,8 +906,10 @@ export default function PlayerPage({ params }: MovieProps) {
         }
     }, [volumePercent]);
 
-    const videoProps: React.VideoHTMLAttributes<HTMLVideoElement> = {
+    const videoProps: (React.VideoHTMLAttributes<HTMLVideoElement> & any) = {
         controls: false,
+        'x-webkit-playsinline': true,
+        'playsInline': true,
         autoPlay: true,
         style: { maxWidth: "100%", maxHeight: "100%", objectFit: 'contain', height: '100vh', width: '100%' },
         className: "mvs-player-content",
@@ -921,13 +923,13 @@ export default function PlayerPage({ params }: MovieProps) {
                 setShowControls(false);
             }, 5000));
         },
-        onTimeUpdate: (e) => {
+        onTimeUpdate: (e: SyntheticEvent<HTMLVideoElement, Event>) => {
             setCurrentTime(e.currentTarget.currentTime);
             setDuration(e.currentTarget.duration);
             setVideoIsPaused(e.currentTarget.paused);
             setVideoLoading(false);
         },
-        onLoadedMetadata: (e) => {
+        onLoadedMetadata: (e: SyntheticEvent<HTMLVideoElement, Event>) => {
             setDuration(e.currentTarget.duration);
             setVideoLoading(false);
         },
@@ -1034,6 +1036,8 @@ export default function PlayerPage({ params }: MovieProps) {
         setActiveDownload({ uuid: stream.uuid, downloader: downloader });
         downloader.start();
     }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     return (
         <CssVarsProvider defaultMode="dark">
@@ -1376,11 +1380,21 @@ export default function PlayerPage({ params }: MovieProps) {
 
                                     <Tooltip title={document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen"} variant={'plain'}>
                                         <i className={`control-icon fas fa-${document.fullscreenElement ? "compress" : "expand"}`} onClick={() => {
-
-                                            if (document.fullscreenElement) {
-                                                document.exitFullscreen();
+                                            if (isIOS) {
+                                                const video = videoRef.current;
+                                                if (video) {
+                                                    if ((video as any).webkitDisplayingFullscreen) {
+                                                        (video as any).webkitExitFullscreen();
+                                                    } else {
+                                                        (video as any).webkitEnterFullscreen();
+                                                    }
+                                                }
                                             } else {
-                                                document.documentElement.requestFullscreen();
+                                                if (document.fullscreenElement) {
+                                                    document.exitFullscreen();
+                                                } else {
+                                                    document.documentElement.requestFullscreen();
+                                                }
                                             }
                                         }}></i>
                                     </Tooltip>
