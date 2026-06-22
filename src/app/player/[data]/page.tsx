@@ -10,7 +10,7 @@ import { VidrockAPI } from "@/app/utils/VidrockAPI";
 import { AnyEmbedAPI } from "@/app/utils/AnyEmbedAPI";
 import { VylaAPI } from "@/app/utils/VylaAPI";
 import "./player-imports.css";
-import { Button, CircularProgress, CssVarsProvider, Drawer, LinearProgress, List, ListItem, ListItemButton, Option, Select, Slider, Tooltip } from "@mui/joy";
+import { Button, CircularProgress, CssVarsProvider, Drawer, LinearProgress, List, ListItem, ListItemButton, Option, Select, Slider, Tooltip, Typography } from "@mui/joy";
 import { HLSDownloader } from "./HLSDownloader";
 
 
@@ -31,6 +31,7 @@ interface PlayerData {
     type: "movie" | "series";
     season?: number;
     episode?: number;
+    startingTime?: number;
 }
 
 type FinalData = {
@@ -839,6 +840,10 @@ export default function PlayerPage({ params }: MovieProps) {
                 const decoded = JSON.parse(atob(decodeURIComponent(data))) as PlayerData;
                 setPlayerData(decoded);
 
+                if(decoded.startingTime) {
+                    setCurrentTime(decoded.startingTime);
+                }
+
                 getMovies(parseInt(decoded.id), decoded.type === "movie" ? "movie" : "tv")
                     .then(setTmdbData)
                     .catch((err) => {
@@ -906,7 +911,7 @@ export default function PlayerPage({ params }: MovieProps) {
         }
     }, [volumePercent]);
 
-    const videoProps: (React.VideoHTMLAttributes<HTMLVideoElement> & any) = {
+    const [videoProps, setVideoProps] = useState<(React.VideoHTMLAttributes<HTMLVideoElement> & any)>({
         controls: false,
         'x-webkit-playsinline': true,
         'playsInline': true,
@@ -932,20 +937,31 @@ export default function PlayerPage({ params }: MovieProps) {
         onLoadedMetadata: (e: SyntheticEvent<HTMLVideoElement, Event>) => {
             setDuration(e.currentTarget.duration);
             setVideoLoading(false);
-        },
-        // fail load
-        onError: () => {
-            if (!manualServer) {
-                let nextStreamIndex = allStreams.findIndex(s => s.uuid === currentStream?.uuid) + 1;
-                if (nextStreamIndex < allStreams.length) {
-                    setCurrentStream(allStreams[nextStreamIndex]);
-                    setVideoLoading(true);
-                }
-            } else {
-                // maybe display warning icon instead of loading
+            if(playerData?.startingTime) {
+                e.currentTarget.currentTime = playerData.startingTime;
             }
         },
-    }
+        // fail load | this sometimes swaps content mid-stream even if its playing fine so we'll just rely on the user for now
+        // onError: () => {
+        //     if (!manualServer) {
+        //         let nextStreamIndex = allStreams.findIndex(s => s.uuid === currentStream?.uuid) + 1;
+        //         if (nextStreamIndex < allStreams.length) {
+        //             setCurrentStream(allStreams[nextStreamIndex]);
+        //             setVideoLoading(true);
+        //         }
+        //     } else {
+        //         // maybe display warning icon instead of loading
+        //     }
+        // },
+    });
+
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    useEffect(() => {
+        const video = videoRef.current;
+        if (video) {
+            video.playbackRate = playbackSpeed;
+        }
+    }, [playbackSpeed]);
 
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -955,6 +971,7 @@ export default function PlayerPage({ params }: MovieProps) {
     const [showControls, setShowControls] = useState(false);
     const [showServerSelect, setShowServerSelect] = useState(false);
     const [showCaptionSelect, setShowCaptionSelect] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     const formatTime = (s: number) => {
         const hours = Math.floor(s / 3600);
@@ -1134,7 +1151,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                             display: flex;
                                             align-items: center;
                                             gap: 8px;
-                                            padding-right: 10px;
+                                            padding-right: 0px;
                                         }
                                         .volume-slider {
                                             width: 0;
@@ -1143,6 +1160,9 @@ export default function PlayerPage({ params }: MovieProps) {
                                         }
                                         .volume-control:hover .volume-slider {
                                             width: 100px;
+                                        }
+                                        .volume-control:hover {
+                                            padding-right: 10px;
                                         }
                                     `}</style>
                                     <div className="volume-control">
@@ -1178,6 +1198,142 @@ export default function PlayerPage({ params }: MovieProps) {
                                             />
                                         </div>
                                     </div>
+
+                                    <Tooltip title="Settings" variant={'plain'}>
+                                        <i className="control-icon fas fa-cog" onClick={() => setShowSettings(!showSettings)}></i>
+                                    </Tooltip>
+                                    <Drawer
+                                        anchor="right"
+                                        open={showSettings}
+                                        onClose={() => setShowSettings(false)}
+                                    >
+                                        <div style={{ padding: "0px" }}>
+                                            <List>
+                                                <ListItem>
+                                                    <ListItemButton onClick={() => {
+                                                        setShowSettings(false);
+                                                    }}>
+                                                        <i className="fas fa-arrow-left" style={{ marginRight: "8px" }}></i>
+                                                        Back
+                                                    </ListItemButton>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', marginTop: '20px' }}>
+                                                    <Typography sx={{ margin: 'none' }} level="title-lg" component="h2">
+                                                        Playback Settings
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md" sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <i className="fas fa-gauge-high"></i>
+                                                        Playback Speed ({playbackSpeed}x)
+                                                    </Typography>
+                                                    <Slider
+                                                        size="sm"
+                                                        value={playbackSpeed}
+                                                        onChange={(_e, value) => {
+                                                            setPlaybackSpeed(value as number);
+                                                        }}
+                                                        step={0.25}
+                                                        min={0.25}
+                                                        max={3}
+                                                        sx={{
+                                                            width: 200,
+                                                            marginRight: '10px',
+                                                            color: 'primary.main',
+                                                            '& .MuiSlider-thumb': {
+                                                                width: 12,
+                                                                height: 12,
+                                                                backgroundColor: '#fff',
+                                                                border: '2px solid currentColor',
+                                                            },
+                                                            '& .MuiSlider-rail': {
+                                                                opacity: 0.3,
+                                                                backgroundColor: '#fff',
+                                                            },
+                                                        }}
+                                                    />
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md" sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <i className="fas fa-volume-high"></i>
+                                                        Volume ({volumePercent}%)
+                                                    </Typography>
+                                                    <Slider
+                                                        size="sm"
+                                                        value={volumePercent}
+                                                        onChange={(_e, value) => {
+                                                            setVolumePercent(value as number);
+                                                        }}
+                                                        step={1}
+                                                        min={0}
+                                                        max={200}
+                                                        sx={{
+                                                            width: 200,
+                                                            marginRight: '10px',
+                                                            color: 'primary.main',
+                                                            '& .MuiSlider-thumb': {
+                                                                width: 12,
+                                                                height: 12,
+                                                                backgroundColor: '#fff',
+                                                                border: '2px solid currentColor',
+                                                            },
+                                                            '& .MuiSlider-rail': {
+                                                                opacity: 0.3,
+                                                                backgroundColor: '#fff',
+                                                            },
+                                                        }}
+                                                    />
+                                                </ListItem>
+                                                
+                                                <ListItem sx={{ py: '0', marginTop: '20px' }}>
+                                                    <Typography sx={{ margin: 'none' }} level="title-lg" component="h2">
+                                                        Keybinds
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md">
+                                                        Seek back 10s
+                                                    </Typography>
+                                                    <Typography>
+                                                        ArrowLeft (<i className="fas fa-arrow-left"></i>)
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md">
+                                                        Seek forward 10s
+                                                    </Typography>
+                                                    <Typography>
+                                                        ArrowRight (<i className="fas fa-arrow-right"></i>)
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md">
+                                                        Frame-step back
+                                                    </Typography>
+                                                    <Typography>
+                                                        Comma (,)
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md">
+                                                        Frame-step forward
+                                                    </Typography>
+                                                    <Typography>
+                                                        Period (.)
+                                                    </Typography>
+                                                </ListItem>
+                                                <ListItem sx={{ py: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography level="body-md">
+                                                        Play/pause
+                                                    </Typography>
+                                                    <Typography>
+                                                        Spacebar ( )
+                                                    </Typography>
+                                                </ListItem>
+                                            </List>
+                                        </div>
+                                    </Drawer>
+
                                     <Tooltip title="Select Stream" variant={'plain'}>
                                         <i className="control-icon fas fa-server" onClick={() => setShowServerSelect(!showServerSelect)}></i>
                                     </Tooltip>
@@ -1284,34 +1440,29 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         return 0;
                                                     }
                                                 ).map((file) => (
-                                                    <ListItem
-                                                        key={file.uuid || file.url || file.magnet || file.label}
-                                                    >
-                                                        <i className={`fas fa-${file.magnet ? 'magnet' : 'file-video'}`} style={{ marginRight: "8px" }}></i>
-                                                        <span style={{
-                                                            whiteSpace: "nowrap",
-                                                            overflow: "hidden",
-                                                            textOverflow: "ellipsis",
-                                                            width: "100%",
-                                                        }}>{file.label}</span>
-                                                        <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
-                                                            if (file.url) {
-                                                                const a = document.createElement("a");
-                                                                a.href = file.url;
-                                                                a.download = `${(
-                                                                    tmdbData ? (playerData?.type === "movie" ? (tmdbData as TMDBMovie)?.title : (tmdbData as TMDBShow)?.name) : "media"
-                                                                ) || "file"}_${file.label}-Movieslay.${file.url.split('.').pop()}`;
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                                a.remove();
-                                                            } else if (file.magnet) {
-                                                                navigator.clipboard.writeText(file.magnet);
-                                                                alert("Magnet link copied to clipboard");
-                                                            }
-                                                        }} style={{ marginLeft: "8px" }}>
-                                                            <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
-                                                        </Button>
-                                                    </ListItem>
+                                                    <Tooltip title={`${file.label}`} placement="left" variant={'plain'} size={'sm'}>
+                                                        <ListItem
+                                                            key={file.uuid || file.url || file.magnet || file.label}
+                                                        >
+                                                            <i className={`fas fa-${file.magnet ? 'magnet' : 'file-video'}`} style={{ marginRight: "8px" }}></i>
+                                                            <span style={{
+                                                                whiteSpace: "nowrap",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                width: "100%",
+                                                            }}>{file.label}</span>
+                                                            <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
+                                                                if (file.url) {
+                                                                    window.open(file.url, "_blank");
+                                                                } else if (file.magnet) {
+                                                                    navigator.clipboard.writeText(file.magnet);
+                                                                    alert("Magnet link copied to clipboard");
+                                                                }
+                                                            }} style={{ marginLeft: "8px" }}>
+                                                                <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
+                                                            </Button>
+                                                        </ListItem>
+                                                    </Tooltip>
                                                 ))}
                                             </List>
                                         </div>
