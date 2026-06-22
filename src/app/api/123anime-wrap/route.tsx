@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { useTMDB } from "../get-movies/tmdb-help";
+import getAnimeMap from "../anime-map/map";
 
 const BASE = "https://123anime.info";
 const TS = "1";
@@ -104,6 +105,9 @@ export async function GET(req: NextRequest) {
     const episode = parseInt(searchParams.get("e") ?? "1");
 
     if (!tmdbId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    const animeMap = await getAnimeMap(tmdbId);
+    if(!animeMap.found_on) return NextResponse.json({ error: "Show is not anime according to fribb map" }, { status: 404 });
 
     const tmdb = await useTMDB(`tv/${tmdbId}`);
     if (!tmdb?.name) return NextResponse.json({ error: "TMDB fetch failed" }, { status: 500 });
