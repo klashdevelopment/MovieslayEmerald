@@ -119,7 +119,7 @@ async function probeVideoUrl(url: string): Promise<boolean> {
     return false;
 }
 
-const sources = ['a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+const sources = ['vidlink', 'vidsync', 'a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -731,6 +731,85 @@ export default function PlayerPage({ params }: MovieProps) {
                     }
                 } catch (error) {
                     console.error("Error fetching XPass data:", error);
+                }
+            })(),
+
+            // VidSync
+            (async () => {
+                try {
+                    const root = `/api/vidsync-wrap?tmdbId=${playerData!.id}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}${year ? `&year=${year}` : ""}&title=${encodeURIComponent(name)}`;
+                    const res = await fetch(`${root}&server=list`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const servers: string[] = await res.json();
+                    setPendingTasks((p) => p + servers.length - 1);
+                    setPendingTasksMax((p) => p + servers.length - 1);
+                    
+                    await Promise.all(servers.map(async (server) => {
+                        try {
+                            // TODO: MATCH ACTUAL RESPONSES
+                            const res = await fetch(`${root}&server=${server}`);
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            const streams = (data.sources ?? []).map((s: any) => ({
+                                label: `VidSync ${s.label} / ${server}`,
+                                type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                                url: s.url,
+                                uuid: randomUUID(),
+                            }));
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+                            commitResults(validStreams, [], { from: "vidsync-" + server, data });
+                        } catch {
+                            // swallow per-server errors
+                        } finally {
+                            setPendingTasks((p) => p - 1);
+                        }
+                    }));
+                } catch (error) {
+                    console.error("Error fetching VidSync servers:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
+
+            // VidLink
+            (async () => {
+                try {
+                    const res = await fetch(`/api/vidlink-wrap?tmdbId=${playerData!.id}${playerData?.season ? `&season=${playerData.season}` : ""}${playerData?.episode ? `&episode=${playerData.episode}` : ""}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const data = await res.json();
+                    const stream = data.stream;
+                    if (!stream || !stream.playlist) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const streams = [{
+                        label: `VidLink ${stream.id}`,
+                        type: stream.type,
+                        url: stream.playlist,
+                        uuid: randomUUID(),
+                    }];
+                    const validStreams = (await Promise.all(
+                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                    )).filter(Boolean) as typeof streams;
+                    const captions = (stream.captions ?? []).map((sub: any) => ({
+                        type: sub.type || captionType(sub.url),
+                        label: "VL " + (sub.language ?? sub.id ?? ""),
+                        language: sub.language ?? sub.id ?? "",
+                        url: `/api/subtitle-wrap?url=${encodeURIComponent(sub.url)}`,
+                        uuid: randomUUID(),
+                    }));
+                    commitResults(validStreams, captions, { from: "vidlink", data });
+                } catch (error) {
+                    console.error("Error fetching VidLink data:", error);
+                } finally {
+                    setPendingTasks((p) => p - 1);
                 }
             })(),
 
