@@ -119,7 +119,7 @@ async function probeVideoUrl(url: string): Promise<boolean> {
     return false;
 }
 
-const sources = ['vidlink', 'vidsync', 'a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
+const sources = ['spencerdevs', 'vidlink', 'vidsync', 'a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
 
 export default function PlayerPage({ params }: MovieProps) {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
@@ -771,6 +771,46 @@ export default function PlayerPage({ params }: MovieProps) {
                     }));
                 } catch (error) {
                     console.error("Error fetching VidSync servers:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
+
+            // SpencerDevs
+            (async () => {
+                try {
+                    const root = `/api/spencerdevs-wrap?id=${playerData!.id}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}`;
+                    const res = await fetch(`${root}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const servers: { servers: number } = await res.json();
+                    setPendingTasks((p) => p + servers.servers - 1);
+                    setPendingTasksMax((p) => p + servers.servers - 1);
+                    
+                    await Promise.all(Array.from({ length: servers.servers }, (_, i) => i + 1).map(async (server) => {
+                        try {
+                            const res = await fetch(`${root}&serverId=${server}`);
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            const streams = (data.sources ?? []).map((s: any) => ({
+                                label: `Spencer S${server} #${s.quality}`,
+                                type: s.type,
+                                url: s.url,
+                                uuid: randomUUID(),
+                            }));
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+                            commitResults(validStreams, [], { from: "spencerdevs-" + server, data });
+                        } catch {
+                            // swallow per-server errors
+                        } finally {
+                            setPendingTasks((p) => p - 1);
+                        }
+                    }));
+                } catch (error) {
+                    console.error("Error fetching SpencerDevs servers:", error);
                     setPendingTasks((p) => p - 1);
                 }
             })(),
