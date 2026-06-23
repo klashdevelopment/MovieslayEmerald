@@ -44,21 +44,29 @@ async function fetchSources(
   id: string,
   season: string | null,
   episode: string | null,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  imdbId: string
 ): Promise<XpassSource[]> {
   const url =
     type === "tv"
       ? `${BASE}/data/tv/${id}/${season}/${episode}?autostart=true&force=true`
-      : `${BASE}/data/movie/${id}?autostart=true`;
+      : `${BASE}/e/movie/${id}?autostart=true`;
 
-//   const res = await fetch(url, { headers,
-//     referrer: `${BASE}/e/${type}/${id}${season && episode ? `/${season}/${episode}` : ""}?autostart=true`,
-//    });
-
+  if (type === 'movie') {
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Sources fetch failed: ${res.status}`);
+    const text = await res.text();
+    const backupsMatch = text.match(/var backups=(\[[\s\S]*?\])/);
+    if (!backupsMatch) throw new Error("Failed to find backups in response: " + text);
+    const backupsJson = backupsMatch[1];
+    const sources: XpassSource[] = JSON.parse(backupsJson);
+    return sources;
+  } else {
     const AEProxyUrl = `https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(url)}&origin=${encodeURIComponent(XPASS_HEADERS.Origin)}&referer=${encodeURIComponent(XPASS_HEADERS.Referrer)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
     const res = await fetch(AEProxyUrl);
-  if (!res.ok) throw new Error(`Sources fetch failed: ${res.status}`);
-  return res.json();
+    if (!res.ok) throw new Error(`Sources fetch failed: ${res.status}`);
+    return res.json();
+  }
 }
 
 async function resolveStream(
@@ -75,11 +83,17 @@ async function resolveStream(
   const mdata: PlaylistResponse = await mdataRes.json();
 
   return mdata.playlist[0].sources.map((s) => ({
-    file: s.file.includes('.txt') ? `https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(s.file)}&origin=${encodeURIComponent(XPASS_HEADERS.Origin)}&referer=${encodeURIComponent(XPASS_HEADERS.Referrer)}` : s.file,
+    file: /*s.file.includes('.txt') ? */`https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(s.file)}&origin=${encodeURIComponent(XPASS_HEADERS.Origin)}&referer=${encodeURIComponent(XPASS_HEADERS.Referrer)}`,// : s.file,
     type: s.type,
     label: s.label,
     id: s.id,
   }));
+}
+
+async function getImdbId(type: string, id: string, name: string, year: string): Promise<string> {
+  const res = await fetch(`https://api.anyembed.xyz/api/meta?tmdb_id=${id}&title=${encodeURIComponent(name)}&year=${year}&type=${type}`);
+  const json = await res.json();
+  return json.imdb_id;
 }
 
 export async function GET(req: Request) {
@@ -90,6 +104,8 @@ export async function GET(req: Request) {
   const season = searchParams.get("season");
   const episode = searchParams.get("episode");
   const sourceId = searchParams.get("source");
+
+  const imdbId = await getImdbId(type || '', id || '', searchParams.get("name") || '', searchParams.get("year") || '');
 
   if (!type || !id) {
     return Response.json({ error: "Missing required params: type, id" }, { status: 400 });
@@ -105,7 +121,7 @@ export async function GET(req: Request) {
   };
 
   try {
-    const sources = await fetchSources(type, id, season, episode, headers);
+    const sources = await fetchSources(type, id, season, episode, headers, imdbId);
 
     if (!sourceId) {
       return Response.json({ sources });
