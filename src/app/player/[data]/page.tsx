@@ -775,6 +775,56 @@ export default function PlayerPage({ params }: MovieProps) {
                 }
             })(),
 
+            // LordFlix
+            (async () => {
+                try {
+                    const root = `/api/lordflix-wrap?tmdbId=${playerData!.id}${playerData?.season ? `&s=${playerData.season}` : ""}${playerData?.episode ? `&e=${playerData.episode}` : ""}${year ? `&year=${year}` : ""}&title=${encodeURIComponent(name)}`;
+                    const res = await fetch(`${root}`);
+                    if (!res.ok) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
+                    const servers: string[] = await res.json();
+                    setPendingTasks((p) => p + servers.length - 1);
+                    setPendingTasksMax((p) => p + servers.length - 1);
+                    
+                    await Promise.all(servers.map(async (server) => {
+                        try {
+                            const res = await fetch(`${root}&server=${server}`);
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            
+                            const streams = (data.sources ?? []).map((s: any) => ({
+                                label: `LordFlix ${s.label} / ${server}`,
+                                type: s.type || (s.url.includes(".m3u8") ? "hls" : "mp4"),
+                                url: s.url,
+                                uuid: randomUUID(),
+                            }));
+                            const validStreams = (await Promise.all(
+                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
+                            )).filter(Boolean) as typeof streams;
+
+                            const captions = (data.captions ?? []).map((sub: any) => ({
+                                type: sub.type || captionType(sub.url),
+                                label: "LF " + sub.language + '(' + sub.label + ')',
+                                language: sub.language,
+                                url: `/api/subtitle-wrap?url=${encodeURIComponent(sub.url)}`,
+                                uuid: randomUUID(),
+                            }));
+
+                            commitResults(validStreams, captions, { from: "lordflix-" + server, data });
+                        } catch {
+                            // swallow per-server errors
+                        } finally {
+                            setPendingTasks((p) => p - 1);
+                        }
+                    }));
+                } catch (error) {
+                    console.error("Error fetching LordFlix servers:", error);
+                    setPendingTasks((p) => p - 1);
+                }
+            })(),
+
             // VidLink
             (async () => {
                 try {
