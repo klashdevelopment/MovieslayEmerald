@@ -180,8 +180,18 @@ export default function PlayerPage({ params }: MovieProps) {
             newCaptions: Caption[],
             finalData?: FinalData
         ) {
-            allStreams.push(...newStreams.valid);
-            invalidStreams.push(...newStreams.invalid);
+            function fixIfAE(s: { label: string; type: string; url: string; uuid: string }): { label: string; type: string; url: string; uuid: string } {
+                if (s.url.includes("api.anyembed.xyz")) {
+                    const encodedUrl = encodeURIComponent(s.url);
+                    return {
+                        ...s,
+                        url: `/api/passthru-proxy?url=${encodedUrl}&Origin=https%3A%2F%2Fanyembed.xyz&Referer=https%3A%2F%2Fanyembed.xyz%2F`
+                    };
+                }
+                return s;
+            }
+            allStreams.push(...newStreams.valid.map(fixIfAE));
+            invalidStreams.push(...newStreams.invalid.map(fixIfAE));
             allCaptions.push(...newCaptions);
             if (finalData) allFinalDatas.push(finalData);
 
@@ -592,8 +602,8 @@ export default function PlayerPage({ params }: MovieProps) {
                             if (!res.ok) return;
                             const data = await res.json();
                             const streams = (data.streams ?? []).map((s: any) => ({
-                                label: `Flicky ${s.label} / ${server}`,
-                                type: s.url.includes(".m3u8") ? "hls" : "mp4",
+                                label: `Flicky ${server.charAt(0).toUpperCase()}${server.substring(1)} ${s.label}`,
+                                type: s.type || (s.url.includes(".m3u8") ? "hls" : "mp4"),
                                 url: s.url,
                                 uuid: randomUUID(),
                             }));
@@ -1261,7 +1271,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         )}
                         <div
                             style={{
-                                position: "absolute", bottom: "0", left: "0", height: "50px", display: `${(showControls||showControlsOverride) ? "flex" : "none"
+                                position: "absolute", bottom: "0", left: "0", height: "50px", display: `${(showControls || showControlsOverride) ? "flex" : "none"
                                     }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
                             }}
                             onMouseEnter={() => {
@@ -1658,38 +1668,42 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         }}>Get qBittorrent for magnets</span>
                                                     </ListItemButton>
                                                 </ListItem>
-                                                {allStreams.filter(s => s.type !== 'hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid } as { label: string, url?: string, magnet?: string, uuid: string })).concat(downloadableFiles).filter(f => f.url || f.magnet).sort(
-                                                    // files over magnets
-                                                    (a, b) => {
-                                                        if (a.url && !b.url) return -1;
-                                                        if (!a.url && b.url) return 1;
-                                                        return 0;
-                                                    }
-                                                ).map((file) => (
-                                                    <Tooltip title={`${file.label}`} placement="left" variant={'plain'} size={'sm'}>
-                                                        <ListItem
-                                                            key={file.uuid || file.url || file.magnet || file.label}
-                                                        >
-                                                            <i className={`fas fa-${file.magnet ? 'magnet' : 'file-video'}`} style={{ marginRight: "8px" }}></i>
-                                                            <span style={{
-                                                                whiteSpace: "nowrap",
-                                                                overflow: "hidden",
-                                                                textOverflow: "ellipsis",
-                                                                width: "100%",
-                                                            }}>{file.label}</span>
-                                                            <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
-                                                                if (file.url) {
-                                                                    window.open(file.url, "_blank");
-                                                                } else if (file.magnet) {
-                                                                    navigator.clipboard.writeText(file.magnet);
-                                                                    alert("Magnet link copied to clipboard");
-                                                                }
-                                                            }} style={{ marginLeft: "8px" }}>
-                                                                <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
-                                                            </Button>
-                                                        </ListItem>
-                                                    </Tooltip>
-                                                ))}
+                                                {allStreams.filter(s => s.type !== 'hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid } as { label: string, url?: string, magnet?: string, uuid: string, backup?: boolean }))
+                                                    .concat(backupStreams.filter(s => s.type !== 'hls').map(s => ({ label: s.label, url: s.url, uuid: s.uuid, backup: true } as { label: string, url?: string, magnet?: string, uuid: string, backup?: boolean }))).concat(downloadableFiles).filter(f => f.url || f.magnet).sort(
+                                                        // files over magnets
+                                                        (a, b) => {
+                                                            if (a.url && !b.url) return -1;
+                                                            if (!a.url && b.url) return 1;
+                                                            return 0;
+                                                        }
+                                                    ).map((file) => (
+                                                        <Tooltip title={`${file.label}`} placement="left" variant={'plain'} size={'sm'}>
+                                                            <ListItem
+                                                                key={file.uuid || file.url || file.magnet || file.label}
+                                                            >
+                                                                <i className={`fas fa-${file.magnet ? 'magnet' : 'file-video'}`} style={{
+                                                                    marginRight: "8px",
+                                                                    color: file.backup ? '#ffb' : undefined
+                                                                }}></i>
+                                                                <span style={{
+                                                                    whiteSpace: "nowrap",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    width: "100%",
+                                                                }}>{file.label}</span>
+                                                                <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
+                                                                    if (file.url) {
+                                                                        window.open(file.url, "_blank");
+                                                                    } else if (file.magnet) {
+                                                                        navigator.clipboard.writeText(file.magnet);
+                                                                        alert("Magnet link copied to clipboard");
+                                                                    }
+                                                                }} style={{ marginLeft: "8px" }}>
+                                                                    <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
+                                                                </Button>
+                                                            </ListItem>
+                                                        </Tooltip>
+                                                    ))}
                                             </List>
                                         </div>
                                     </Drawer>

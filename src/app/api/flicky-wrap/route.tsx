@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
         const m3u8Text = await m3u8Res.text();
 
         if (m3u8Text.includes('#EXT-X-STREAM-INF')) {
-            const streams: { label: string; url: string }[] = [];
+            const streams: { label: string; url: string, type: 'hls' | any }[] = [];
             const lines = m3u8Text.split('\n').map(l => l.trim()).filter(Boolean);
 
             for (let i = 0; i < lines.length; i++) {
@@ -126,7 +126,8 @@ export async function GET(req: NextRequest) {
 
                     streams.push({
                         label: `${final.language} ${resolution}`,
-                        url: streamUrl
+                        url: streamUrl,
+                        type: 'hls'
                     });
                 }
             }
@@ -136,7 +137,8 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({
                 streams: [{
                     label: final.language,
-                    url: `https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(rawUrl)}&headers={%22Origin%22:%22https://flickystream.su%22,%22Referer%22:%22https://flickystream.su/%22}`
+                    url: `https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(rawUrl)}&headers={%22Origin%22:%22https://flickystream.su%22,%22Referer%22:%22https://flickystream.su/%22}`,
+                    type: 'hls'
                 }]
             });
         }
