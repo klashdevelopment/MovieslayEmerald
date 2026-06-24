@@ -35,7 +35,7 @@ function resolveUrl(uri: string, baseDir: string, origin: string): string {
     return `${baseDir}${uri}`;
 }
 
-export async function handler(req: NextRequest) {
+async function handler(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const targetUrl = searchParams.get('url');

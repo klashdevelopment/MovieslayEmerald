@@ -1794,7 +1794,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         </div>
                     </div>
                 )}
-                {allFinalDatas.length > 0 && allStreams.length === 0 && (pendingTasks > 0 ? <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {allFinalDatas.length > 0 && (allStreams.length === 0&&backupStreams.length===0) && (!(pendingTasks < pendingTasksMax) ? <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
                     <p style={{ color: 'white' }}>Loading ({pendingTasksMax - pendingTasks}/{pendingTasksMax})...</p>
                 </div> : <div style={{ display: 'flex', flexDirection: 'column' }}>
