@@ -6,7 +6,7 @@ export async function getVylaSources(): Promise<any[]> {
     }
     // Vyla is literally the GOAT thank you SO much
     const response = await fetch(`https://missourimonster-movieslay.hf.space/api?sources_meta`, {
-        headers: { "Cache-Control": "public, max-age=3600" }
+        headers: { "Cache-Control": "public, max-age=3600", 'X-API-Key': process.env.VYLA_API_KEY || "", 'Authorization': `Bearer ${process.env.VYLA_API_KEY || ""}` },
     });
     if (!response.ok) throw new Error(`Error fetching health: ${response.statusText}`);
     const data = await response.json();
@@ -23,7 +23,9 @@ export async function getVylaSubtitles(id: string, type: "movie" | "tv" = "tv", 
     const url = type === "movie"
         ? `https://missourimonster-movieslay.hf.space/api/subtitles/movie/${id}`
         : `https://missourimonster-movieslay.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        headers: { 'X-API-Key': process.env.VYLA_API_KEY || "", 'Authorization': `Bearer ${process.env.VYLA_API_KEY || ""}`}
+    });
     if (!response.ok) throw new Error(`Error fetching subtitles: ${response.statusText}`);
     return response.json();
 }
@@ -45,7 +47,9 @@ export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: strin
     }
     const response = await fetch(url, {
         headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36 MovieslayDotCom/PleaseContactMe OnDiscord/gavingogaming",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36",
+            'X-API-Key': process.env.VYLA_API_KEY || "",
+            'Authorization': `Bearer ${process.env.VYLA_API_KEY || ""}`,
             ...(timeout ? { "X-Timeout": timeout } : {})
         },
         signal: timeout ? AbortSignal.timeout(parseInt(timeout)) : undefined,

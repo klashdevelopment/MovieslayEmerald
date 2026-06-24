@@ -1,4 +1,7 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+
+const ENABLED = false;
 
 const BASE_URL = "https://api.anyembed.xyz";
 const SESSION_URL = `${BASE_URL}/api/v1/session`;
@@ -10,13 +13,17 @@ interface SessionResponse {
   token: string;
 }
 
-// Module-level token state (persists across requests in the same serverless instance)
 let token: string | null = null;
 let tokenExpiresAt: number | null = null;
 let sessionPromise: Promise<void> | null = null;
 
 async function refreshToken(): Promise<void> {
-  const res = await fetch(SESSION_URL);
+  const res = await fetch(SESSION_URL, {
+    headers: {
+      'x-embed-attest': randomUUID(),
+      ...(await signRequest("/api/v1/session"))
+    }
+  });
   if (!res.ok) throw new Error(`Failed to fetch session: ${res.status}`);
   const data: SessionResponse = await res.json();
   token = data.token;
@@ -40,6 +47,33 @@ async function ensureToken(): Promise<string> {
   return token!;
 }
 
+async function signRequest(apiPath: string) {
+  const signKey = "d035034d53a17fc7337fff6d3abe5df00d97ff438fa1f2f12e02710ae8bef3fe";
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomUUID();
+  const message = `${timestamp}:${apiPath}:${nonce}`;
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(signKey),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
+  const hex = Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return {
+    "x-anyembed-timestamp": timestamp,
+    "x-anyembed-nonce": nonce,
+    "x-anyembed-signature": hex,
+  };
+}
+
 // Maps your local proxy paths to upstream AnyEmbed paths.
 // GET /api/anyembed-wrap/stream/[id]    → /api/v1/stream/[id]
 // GET /api/anyembed-wrap/known-server   → /api/known-server
@@ -53,6 +87,7 @@ function resolveUpstreamPath(pathname: string): string {
 }
 
 export async function GET(req: NextRequest) {
+  if(!ENABLED) return NextResponse.json({ error: "AnyEmbed scraper is disabled" }, { status: 503 });
   try {
     const sessionToken = await ensureToken();
 
@@ -65,8 +100,10 @@ export async function GET(req: NextRequest) {
       upstreamUrl.searchParams.set(key, value);
     });
 
+    const signs = await signRequest(upstreamPath);
+
     const upstream = await fetch(upstreamUrl.toString(), {
-      headers: { "x-session-token": sessionToken },
+      headers: { "x-session-token": sessionToken, ...signs },
     });
 
     // Stream the body straight through

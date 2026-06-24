@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             streams: encJson.result.sources.map((s: any) => ({
                 label: s.quality,
-                url: s.url
+                url: `https://api.anyembed.xyz/api/proxy?url=${encodeURIComponent(s.url)}&headers={"Origin":"https://player.videasy.to","Referer":"https://player.videasy.to/"}&Origin=https://player.videasy.to&Referer=https://player.videasy.to/`
             })),
             subtitles: encJson.result.subtitles.map((s: any) => ({
                 label: s.language,

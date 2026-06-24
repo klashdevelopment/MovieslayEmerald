@@ -6,7 +6,7 @@ Movieslay Emerald is a successor to the Movieslay webapp. We're an all in one ro
 Files for the Movieslay desktop and mobile apps are included too - supports iOS, Windows, and macOS.
 
 ## Hosting
-You need to input at minimum a TMDB api key (get it free [here](https://docs.pstream.net/client/tmdb/)) in the .env. An example env is provided. A FEDDB key is the 'ui' cookie on febbox, which you can see a video to get [here](https://vimeo.com/1059834885/c3ab398d42?fl=pl&fe=ti).
+You need to input at minimum a TMDB api key (get it free [here](https://docs.pstream.net/client/tmdb/)) in the .env. An example env is provided. A FEDDB key is the 'ui' cookie on febbox, which you can see a video to get [here](https://vimeo.com/1059834885/c3ab398d42?fl=pl&fe=ti). You can add Vyla's source using a Vyla api key, see that [here](https://vyla.mintlify.app/authentication).
 
 ```bash
 npm i

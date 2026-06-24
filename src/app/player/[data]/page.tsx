@@ -78,8 +78,7 @@ function URLPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
 async function validateStream(stream: { type: string; url: string }): Promise<boolean> {
     try {
         if (stream.type === "hls") {
-            const res = await fetch(stream.url, { signal: AbortSignal.timeout(5000) });
-            if (!res.ok) return false;
+            const res = await fetch(stream.url, { signal: AbortSignal.timeout(15000) });
             const text = await res.text();
             return text.includes("#EXTM3U");
         } else {
@@ -110,8 +109,7 @@ async function probeVideoUrl(url: string): Promise<boolean> {
                 // since we already know the status was good
                 if (!ct || ct.includes("video") || ct.includes("octet-stream")) return true;
             }
-            // 405/501 = HEAD not allowed, try next strategy
-            if (res.status !== 405 && res.status !== 501) break;
+            break;
         } catch {
             break;
         }
@@ -131,12 +129,29 @@ export default function PlayerPage({ params }: MovieProps) {
     const [allCaptions, setAllCaptions] = useState<Caption[]>([]);
     const [currentCaption, setCurrentCaption] = useState<Caption | undefined>(undefined);
 
+    const [backupStreams, setBackupStreams] = useState<{ label: string; type: string; url: string, uuid: string }[]>([]);
     const [allStreams, setAllStreams] = useState<{ label: string; type: string; url: string, uuid: string }[]>([]);
     const [currentStream, setCurrentStream] = useState<{ label: string; type: string; url: string, uuid: string } | null>(null);
     const [pendingTasks, setPendingTasks] = useState<number>(sources.length);
     const [pendingTasksMax, setPendingTasksMax] = useState<number>(sources.length);
 
     const [downloadableFiles, setDownloadableFiles] = useState<{ label: string; url?: string, magnet?: string, uuid: string }[]>([]);
+
+    async function partitionStreams<T>(
+        streams: (T & { type: string; url: string; })[],
+        validate: (s: (T & { type: string; url: string; })) => Promise<boolean> = validateStream
+    ): Promise<{ valid: T[]; invalid: T[] }> {
+        const results = await Promise.all(
+            streams.map(async (s) => ({ stream: s, ok: await validate(s) }))
+        );
+        return results.reduce(
+            (acc, { stream, ok }) => {
+                acc[ok ? "valid" : "invalid"].push(stream);
+                return acc;
+            },
+            { valid: [] as T[], invalid: [] as T[] }
+        );
+    }
 
     async function fetchContent() {
         setPendingTasks(sources.length);
@@ -150,18 +165,23 @@ export default function PlayerPage({ params }: MovieProps) {
             return url.includes(".vtt") ? "vtt" : "srt";
         }
 
-        // Shared mutable state, written by each settler as it resolves
+        // shared mutable state, written by each settler as it resolves
         const allStreams: { label: string; type: string; url: string; uuid: string }[] = [];
+        const invalidStreams: { label: string; type: string; url: string; uuid: string }[] = [];
         const allCaptions: Caption[] = [];
         const allFinalDatas: FinalData[] = [];
         let firstStreamSet = false;
 
-        function commitResults(
-            newStreams: typeof allStreams,
+        async function commitResults(
+            newStreams: {
+                valid: typeof allStreams,
+                invalid: typeof allStreams
+            },
             newCaptions: Caption[],
             finalData?: FinalData
         ) {
-            allStreams.push(...newStreams);
+            allStreams.push(...newStreams.valid);
+            invalidStreams.push(...newStreams.invalid);
             allCaptions.push(...newCaptions);
             if (finalData) allFinalDatas.push(finalData);
 
@@ -170,6 +190,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 firstStreamSet = true;
             }
             setAllStreams([...allStreams]);
+            setBackupStreams([...invalidStreams]);
             setAllFinalDatas([...allFinalDatas]);
         }
 
@@ -194,9 +215,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     url: s.file,
                     uuid: randomUUID(),
                 }));
-                const validStreams = (await Promise.all(
-                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                )).filter(Boolean) as typeof streams;
+                const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                 commitResults(validStreams, [], { from: "febbox", data: data });
                 setPendingTasks((p) => p - 1);
             })(),
@@ -226,7 +245,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 };
                 const valid = await validateStream(stream);
                 if (valid) {
-                    commitResults([stream], [], { from: "lookmovies", data });
+                    commitResults({ valid: [stream], invalid: [] }, [], { from: "lookmovies", data });
                 }
             })(),
 
@@ -262,7 +281,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 }));
                 const valid = await validateStream(stream);
                 if (valid) {
-                    commitResults([stream], subtitles, { from: "lmscript", data });
+                    commitResults({ valid: [stream], invalid: [] }, subtitles, { from: "lmscript", data });
                 }
             })(),
 
@@ -517,9 +536,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                     uuid: randomUUID(),
                                 }
                             ]
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                             commitResults(validStreams, [], { from: "vyla-" + source.key, data: vyla });
                             setPendingTasks((p) => p - 1);
                         } catch (error) {
@@ -544,7 +561,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         });
                     }
 
-                    commitResults([], captions, { from: "vyla-subtitles", data: subs });
+                    commitResults({ valid: [], invalid: [] }, captions, { from: "vyla-subtitles", data: subs });
 
                 } catch (error) {
                     console.error("Error fetching Vyla subtitles:", error);
@@ -580,9 +597,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                 url: s.url,
                                 uuid: randomUUID(),
                             }));
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                             commitResults(validStreams, [], { from: "flicky-" + server, data });
                         } catch {
                             // swallow per-server errors
@@ -625,9 +640,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                 url: s.url,
                                 uuid: randomUUID(),
                             }));
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
 
                             const subtitles = (data.subtitles ?? []).map((sub: any) => ({
                                 type: sub.type || captionType(sub.url),
@@ -635,7 +648,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                 url: `/api/subtitle-wrap?url=${encodeURIComponent(sub.url)}`,
                                 language: sub.language ?? "",
                                 uuid: randomUUID(),
-                            }));
+                            })).filter((sub: any) => !sub.label.includes('Yoru'));
 
                             commitResults(validStreams, subtitles, { from: "videasy-" + server, data });
                         } catch {
@@ -684,9 +697,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         uuid: randomUUID(),
                     });
                 }
-                const validStreams = (await Promise.all(
-                    streams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean) as typeof streams;
+                const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                 commitResults(validStreams, captions, { from: "vidrock", data: vidrock });
                 setPendingTasks((p) => p - 1);
             })(),
@@ -719,9 +730,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                     url: s.file,
                                     uuid: randomUUID(),
                                 }));
-                                const validStreams = (await Promise.all(
-                                    streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                                )).filter(Boolean) as typeof streams;
+                                const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                                 commitResults(validStreams, [], { from: "xpass-" + source.name, data });
                                 setPendingTasks((p) => p - 1);
                             } catch (error) {
@@ -746,7 +755,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     const servers: string[] = await res.json();
                     setPendingTasks((p) => p + servers.length - 1);
                     setPendingTasksMax((p) => p + servers.length - 1);
-                    
+
                     await Promise.all(servers.map(async (server) => {
                         try {
                             // TODO: MATCH ACTUAL RESPONSES
@@ -759,9 +768,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                 url: s.url,
                                 uuid: randomUUID(),
                             }));
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                             commitResults(validStreams, [], { from: "vidsync-" + server, data });
                         } catch {
                             // swallow per-server errors
@@ -787,21 +794,19 @@ export default function PlayerPage({ params }: MovieProps) {
                     const servers: { servers: number } = await res.json();
                     setPendingTasks((p) => p + servers.servers - 1);
                     setPendingTasksMax((p) => p + servers.servers - 1);
-                    
+
                     await Promise.all(Array.from({ length: servers.servers }, (_, i) => i + 1).map(async (server) => {
                         try {
                             const res = await fetch(`${root}&serverId=${server}`);
                             if (!res.ok) return;
                             const data = await res.json();
-                            const streams = (data.sources ?? []).map((s: any) => ({
-                                label: `Spencer S${server} #${s.quality}`,
-                                type: s.type,
-                                url: s.url,
+                            const streams = [{
+                                label: `Spencer S${server} #${data.quality}`,
+                                type: data.type,
+                                url: data.url,
                                 uuid: randomUUID(),
-                            }));
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            }];
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                             commitResults(validStreams, [], { from: "spencerdevs-" + server, data });
                         } catch {
                             // swallow per-server errors
@@ -827,22 +832,20 @@ export default function PlayerPage({ params }: MovieProps) {
                     const servers: string[] = await res.json();
                     setPendingTasks((p) => p + servers.length - 1);
                     setPendingTasksMax((p) => p + servers.length - 1);
-                    
+
                     await Promise.all(servers.map(async (server) => {
                         try {
                             const res = await fetch(`${root}&server=${server}`);
                             if (!res.ok) return;
                             const data = await res.json();
-                            
+
                             const streams = (data.sources ?? []).map((s: any) => ({
                                 label: `LordFlix ${s.label} / ${server}`,
                                 type: s.type || (s.url.includes(".m3u8") ? "hls" : "mp4"),
                                 url: s.url,
                                 uuid: randomUUID(),
                             }));
-                            const validStreams = (await Promise.all(
-                                streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                            )).filter(Boolean) as typeof streams;
+                            const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
 
                             const captions = (data.captions ?? []).map((sub: any) => ({
                                 type: sub.type || captionType(sub.url),
@@ -885,9 +888,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         url: stream.playlist,
                         uuid: randomUUID(),
                     }];
-                    const validStreams = (await Promise.all(
-                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                    )).filter(Boolean) as typeof streams;
+                    const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                     const captions = (stream.captions ?? []).map((sub: any) => ({
                         type: sub.type || captionType(sub.url),
                         label: "VL " + (sub.language ?? sub.id ?? ""),
@@ -915,9 +916,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         url: s.m3u8,
                         uuid: randomUUID(),
                     }));
-                    const validStreams = (await Promise.all(
-                        streams.map(async (s: any) => (await validateStream(s) ? s : null))
-                    )).filter(Boolean) as typeof streams;
+                    const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                     commitResults(validStreams, [], { from: "123anime", data });
                 } catch (error) {
                     console.error("Error fetching 123Anime data:", error);
@@ -964,9 +963,8 @@ export default function PlayerPage({ params }: MovieProps) {
                     }
                 }
                 const uniqueStreams = Array.from(uniqueStreamsMap.values());
-                const validStreams = (await Promise.all(
-                    uniqueStreams.map(async s => (await validateStream(s) ? s : null))
-                )).filter(Boolean).sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0)) as typeof streams;
+                let validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; qs?: number }>(uniqueStreams);
+                validStreams.valid = validStreams.valid.sort((a: any, b: any) => (b.qs ?? 0) - (a.qs ?? 0));
                 commitResults(validStreams, captions, { from: "anyembed", data: ae });
                 setPendingTasks((p) => p - 1);
             })(),
@@ -1009,7 +1007,7 @@ export default function PlayerPage({ params }: MovieProps) {
                 const decoded = JSON.parse(atob(decodeURIComponent(data))) as PlayerData;
                 setPlayerData(decoded);
 
-                if(decoded.startingTime) {
+                if (decoded.startingTime) {
                     setCurrentTime(decoded.startingTime);
                 }
 
@@ -1080,6 +1078,8 @@ export default function PlayerPage({ params }: MovieProps) {
         }
     }, [volumePercent]);
 
+    const [showControlsOverride, setShowControlsOverride] = useState(false);
+
     const [videoProps, setVideoProps] = useState<(React.VideoHTMLAttributes<HTMLVideoElement> & any)>({
         controls: false,
         'x-webkit-playsinline': true,
@@ -1106,7 +1106,7 @@ export default function PlayerPage({ params }: MovieProps) {
         onLoadedMetadata: (e: SyntheticEvent<HTMLVideoElement, Event>) => {
             setDuration(e.currentTarget.duration);
             setVideoLoading(false);
-            if(playerData?.startingTime) {
+            if (playerData?.startingTime) {
                 e.currentTarget.currentTime = playerData.startingTime;
             }
         },
@@ -1261,9 +1261,23 @@ export default function PlayerPage({ params }: MovieProps) {
                         )}
                         <div
                             style={{
-                                position: "absolute", bottom: "0", left: "0", height: "50px", display: `${showControls ? "flex" : "none"
+                                position: "absolute", bottom: "0", left: "0", height: "50px", display: `${(showControls||showControlsOverride) ? "flex" : "none"
                                     }`, flexDirection: 'column', width: "calc(100% - 20px)", marginLeft: '10px', background: "linear-gradient(transparent, rgba(0,0,0,0.7))"
-                            }}>
+                            }}
+                            onMouseEnter={() => {
+                                setShowControlsOverride(true);
+                            }}
+                            onMouseLeave={() => {
+                                setShowControlsOverride(false);
+                                setShowControls(true);
+                                if (showControlsTimeout) {
+                                    clearTimeout(showControlsTimeout);
+                                }
+                                setShowControlsTimeout(setTimeout(() => {
+                                    setShowControls(false);
+                                }, 5000));
+                            }}
+                        >
                             <Slider
                                 size="sm"
                                 value={duration ? (currentTime / duration) * 100 : 0}
@@ -1453,7 +1467,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                         }}
                                                     />
                                                 </ListItem>
-                                                
+
                                                 <ListItem sx={{ py: '0', marginTop: '20px' }}>
                                                     <Typography sx={{ margin: 'none' }} level="title-lg" component="h2">
                                                         Keybinds
@@ -1581,6 +1595,49 @@ export default function PlayerPage({ params }: MovieProps) {
                                                                 {activeDownload.downloader.progress.toFixed(1)}
                                                             </CircularProgress> : <i className="fas fa-download"></i>}
                                                         </Button> */}
+                                                    </ListItem>
+                                                ))}
+                                                <ListItem style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '0' }}>
+                                                    <i className="fas fa-database" style={{ flex: '0 0 auto' }}></i>
+                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}>Backup Streams</span>
+                                                    <div style={{ height: '1px', flex: '1 1 auto', backgroundColor: '#ccd7e190' }}></div>
+                                                </ListItem>
+                                                <ListItem style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '0' }}>
+                                                    <i className="fas fa-warning" style={{ flex: '0 0 auto', fontSize: '14px', color: '#ffa' }}></i>
+                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto', fontSize: '14px', color: "#ccc" }}>Very unreliable, most will not load at all</span>
+
+                                                </ListItem>
+                                                {backupStreams.map((stream) => (
+                                                    <ListItem
+                                                        key={stream.uuid}
+                                                        value={stream.uuid}
+                                                        onClick={() => {
+                                                            setCurrentStream(stream);
+                                                            setShowServerSelect(false);
+                                                            setVideoLoading(true);
+                                                            setManualServer(true);
+                                                        }}
+                                                        sx={{
+                                                            position: "relative",
+                                                        }}
+                                                    >
+                                                        <Tooltip title={`${stream.type.toUpperCase()} ${stream.label}`} placement="left" variant={'plain'} size={'sm'}>
+                                                            <ListItemButton selected={currentStream?.uuid === stream.uuid} sx={{
+                                                                // cap text to 1 line with ellipsis
+                                                                whiteSpace: "nowrap",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                width: "100%",
+                                                            }}>
+                                                                <i className={`fas fa-${stream.type === "hls" ? "stream" : "file-video"}`} style={{ marginRight: "8px", color: '#ffb' }}></i>
+                                                                <span style={{
+                                                                    whiteSpace: "nowrap",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    width: "100%",
+                                                                }}>{stream.label}</span>
+                                                            </ListItemButton>
+                                                        </Tooltip>
                                                     </ListItem>
                                                 ))}
                                                 <ListItem style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
