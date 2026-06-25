@@ -75,7 +75,8 @@ function URLPlayer({ url, subtitleEnabled, videoRef, ...props }: { url: string, 
     </video>
 }
 
-async function validateStream(stream: { type: string; url: string }): Promise<boolean> {
+async function validateStream(ogStream: { type: string; url: string }): Promise<boolean> {
+    const stream = fixIfAE(ogStream as any);
     try {
         if (stream.type === "hls") {
             const res = await fetch(stream.url, { signal: AbortSignal.timeout(15000) });
@@ -90,7 +91,7 @@ async function validateStream(stream: { type: string; url: string }): Promise<bo
 }
 
 async function validateDownloadable(url: string): Promise<boolean> {
-    return probeVideoUrl(url);
+    return probeVideoUrl(fixIfAE({ url } as any).url);
 }
 
 async function probeVideoUrl(url: string): Promise<boolean> {
@@ -115,6 +116,17 @@ async function probeVideoUrl(url: string): Promise<boolean> {
         }
     }
     return false;
+}
+
+function fixIfAE(s: { label: string; type: string; url: string; uuid: string }): { label: string; type: string; url: string; uuid: string } {
+    if (s.url.includes("api.anyembed.xyz")) {
+        const encodedUrl = encodeURIComponent(s.url);
+        return {
+            ...s,
+            url: `/api/passthru-proxy?url=${encodedUrl}&Origin=https%3A%2F%2Fanyembed.xyz&Referer=https%3A%2F%2Fanyembed.xyz%2F`
+        };
+    }
+    return s;
 }
 
 const sources = ['spencerdevs', 'vidlink', 'vidsync', 'a111xyz', 'flicky', 'nomorflix', 'nomorflixanime', 'webtormagnets', 'dlpeachify', 'febbox', 'anyembed', 'vidrock', 'vyla', '123anime', 'xpass', 'lmscript', 'lookmovies'] as const;
@@ -172,6 +184,7 @@ export default function PlayerPage({ params }: MovieProps) {
         const allFinalDatas: FinalData[] = [];
         let firstStreamSet = false;
 
+
         async function commitResults(
             newStreams: {
                 valid: typeof allStreams,
@@ -180,19 +193,12 @@ export default function PlayerPage({ params }: MovieProps) {
             newCaptions: Caption[],
             finalData?: FinalData
         ) {
-            function fixIfAE(s: { label: string; type: string; url: string; uuid: string }): { label: string; type: string; url: string; uuid: string } {
-                if (s.url.includes("api.anyembed.xyz")) {
-                    const encodedUrl = encodeURIComponent(s.url);
-                    return {
-                        ...s,
-                        url: `/api/passthru-proxy?url=${encodedUrl}&Origin=https%3A%2F%2Fanyembed.xyz&Referer=https%3A%2F%2Fanyembed.xyz%2F`
-                    };
-                }
-                return s;
-            }
-            allStreams.push(...newStreams.valid.map(fixIfAE));
-            invalidStreams.push(...newStreams.invalid.map(fixIfAE));
-            allCaptions.push(...newCaptions);
+            if (newStreams?.valid)
+                allStreams.push(...(newStreams.valid.map(b => fixIfAE(b))));
+            if (newStreams?.invalid)
+                invalidStreams.push(...(newStreams.invalid.map(b => fixIfAE(b))));
+            if (newCaptions?.length)
+                allCaptions.push(...newCaptions);
             if (finalData) allFinalDatas.push(finalData);
 
             if (!firstStreamSet && allStreams.length > 0) {
@@ -840,6 +846,10 @@ export default function PlayerPage({ params }: MovieProps) {
                         return;
                     }
                     const servers: string[] = await res.json();
+                    if (!servers || servers.length === 0) {
+                        setPendingTasks((p) => p - 1);
+                        return;
+                    }
                     setPendingTasks((p) => p + servers.length - 1);
                     setPendingTasksMax((p) => p + servers.length - 1);
 
@@ -1036,7 +1046,9 @@ export default function PlayerPage({ params }: MovieProps) {
 
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    const playPause = () => {
+    const playPause = (e?: React.MouseEvent<HTMLButtonElement>) => {
+        e?.preventDefault();
+        e?.stopPropagation();
         const video = document.querySelector('.mvs-player-content') as HTMLVideoElement | null;
         if (!video) return;
         if (video.paused) {
@@ -1093,9 +1105,10 @@ export default function PlayerPage({ params }: MovieProps) {
     const [videoProps, setVideoProps] = useState<(React.VideoHTMLAttributes<HTMLVideoElement> & any)>({
         controls: false,
         'x-webkit-playsinline': true,
-        'playsInline': true,
+        'webkit-playsinline': true,
+        'playsInline': true, // please ios why cant i just disable your stupid default video controls i have my own
         autoPlay: true,
-        style: { maxWidth: "100%", maxHeight: "100%", objectFit: 'contain', height: '100vh', width: '100%' },
+        style: { maxWidth: "100%", maxHeight: "100%", objectFit: 'contain', height: '100vh', width: '100%', /* pointerEvents: 'none !important' */ },
         className: "mvs-player-content",
         onClick: playPause,
         onMouseMove: () => {
@@ -1251,7 +1264,7 @@ export default function PlayerPage({ params }: MovieProps) {
                     <p style={{ color: 'white', textAlign: 'center' }}>Loading your media...</p>
                     <span style={{ color: '#888', fontSize: '14px' }}><i>Mediaslay's ad-free player is in beta.</i></span>
                 </div>}
-                {(currentStream) && (
+                {(currentStream || (allStreams.length + backupStreams.length) > 0) && (
                     <div style={{ maxWidth: "100%", maxHeight: "100%", display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", position: "relative" }}>
                         <i className={`fas fa-${videoLoading ? 'sync fa-fade' : 'pause'}`} style={{
                             position: "absolute",
@@ -1264,10 +1277,12 @@ export default function PlayerPage({ params }: MovieProps) {
                             opacity: (videoIsPaused || videoLoading) ? 1 : 0,
                             transition: "opacity 0.3s",
                         }}></i>
-                        {currentStream?.type === "hls" ? (
-                            <HLSPlayer {...videoProps} videoRef={videoRef} url={currentStream.url} subtitleEnabled={currentCaption} />
-                        ) : (
-                            <URLPlayer {...videoProps} videoRef={videoRef} url={currentStream.url} subtitleEnabled={currentCaption} />
+                        {currentStream && currentStream.url && (
+                            (currentStream.type === "hls") ? (
+                                <HLSPlayer {...videoProps} videoRef={videoRef} url={(currentStream as { url: string }).url} subtitleEnabled={currentCaption} />
+                            ) : (
+                                <URLPlayer {...videoProps} videoRef={videoRef} url={(currentStream as { url: string }).url} subtitleEnabled={currentCaption} />
+                            )
                         )}
                         <div
                             style={{
@@ -1794,7 +1809,7 @@ export default function PlayerPage({ params }: MovieProps) {
                         </div>
                     </div>
                 )}
-                {allFinalDatas.length > 0 && (allStreams.length === 0&&backupStreams.length===0) && (!(pendingTasks < pendingTasksMax) ? <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {allFinalDatas.length > 0 && (allStreams.length === 0 && backupStreams.length === 0) && (pendingTasks > 0 ? <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <img src="/assets/mvs_watermark.png" style={{ width: '200px', margin: '0 auto' }} />
                     <p style={{ color: 'white' }}>Loading ({pendingTasksMax - pendingTasks}/{pendingTasksMax})...</p>
                 </div> : <div style={{ display: 'flex', flexDirection: 'column' }}>
