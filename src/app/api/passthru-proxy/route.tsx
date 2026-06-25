@@ -111,7 +111,7 @@ async function handler(req: NextRequest) {
             const extraParamsStr = extraParams.size > 0 ? `&${extraParams.toString()}` : '';
 
             // Build the proxy base URL from the incoming request
-            const reqUrl = new URL(req.url);
+            const reqUrl = req.nextUrl;
             const proxyBase = `${reqUrl.origin}${reqUrl.pathname}?url=`;
 
             const rewritten = rewriteM3U8(text, proxyBase, targetUrl, extraParamsStr);

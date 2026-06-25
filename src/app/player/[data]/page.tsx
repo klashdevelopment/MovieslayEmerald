@@ -1104,9 +1104,9 @@ export default function PlayerPage({ params }: MovieProps) {
 
     const [videoProps, setVideoProps] = useState<(React.VideoHTMLAttributes<HTMLVideoElement> & any)>({
         controls: false,
-        'x-webkit-playsinline': true,
-        'webkit-playsinline': true,
-        'playsInline': true, // please ios why cant i just disable your stupid default video controls i have my own
+        'x-webkit-playsinline': '',
+        'webkit-playsinline': '',
+        'playsInline': '', // please ios why cant i just disable your stupid default video controls i have my own
         autoPlay: true,
         style: { maxWidth: "100%", maxHeight: "100%", objectFit: 'contain', height: '100vh', width: '100%', /* pointerEvents: 'none !important' */ },
         className: "mvs-player-content",
@@ -1206,6 +1206,35 @@ export default function PlayerPage({ params }: MovieProps) {
         }
     }
 
+    async function testVideo(url: string): Promise<boolean> {
+        // This function tests a video URL by using an actual video instead of a simple quick fetch. It lets the user check backup streams before selecting them.
+        const video = document.createElement("video");
+        video.src = url;
+        video.preload = "metadata";
+        video.muted = true;
+        video.playsInline = true;
+        video.style.display = "none";
+        document.body.appendChild(video);
+        video.load();
+        return new Promise<boolean>((resolve) => {
+            const timeout = setTimeout(() => {
+                document.body.removeChild(video);
+                resolve(false);
+            }, 10000);
+
+            video.addEventListener("loadedmetadata", () => {
+                clearTimeout(timeout);
+                document.body.removeChild(video);
+                resolve(true);
+            });
+
+            video.addEventListener("error", () => {
+                clearTimeout(timeout);
+                document.body.removeChild(video);
+                resolve(false);
+            });
+        });
+    }
 
     // have an activeDownload that stores the uuid of the stream thats downloading, the progress/maxProgress, and whether it's done. then in the server select, show a download button for each stream that isn't the current one, and when clicked, set the activeDownload to that stream, and start downloading it, updating progress as it goes, and when done, open the url in a new tab.
     const [activeDownload, setActiveDownload] = useState<{ uuid: string; downloader: HLSDownloader } | null>(null);
@@ -1629,7 +1658,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                 </ListItem>
                                                 <ListItem style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '0' }}>
                                                     <i className="fas fa-warning" style={{ flex: '0 0 auto', fontSize: '14px', color: '#ffa' }}></i>
-                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto', fontSize: '14px', color: "#ccc" }}>Very unreliable, most will not load at all</span>
+                                                    <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto', fontSize: '14px', color: "#ccc" }}>Very unreliable and may not load</span>
 
                                                 </ListItem>
                                                 {backupStreams.map((stream) => (
@@ -1662,6 +1691,23 @@ export default function PlayerPage({ params }: MovieProps) {
                                                                     width: "100%",
                                                                 }}>{stream.label}</span>
                                                             </ListItemButton>
+                                                        </Tooltip>
+                                                        <Tooltip title={`Check source`} placement="left" variant={'plain'} size={'sm'}>
+                                                            <Button variant="outlined" color={"neutral"} size="sm" onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const icon = e.currentTarget.querySelector('i');
+                                                                if (!icon) return;
+                                                                icon.className = `fas fa-sync fa-spin`;
+                                                                const testResult = await testVideo(stream.url);
+                                                                if (testResult) {
+                                                                    icon.className = `fas fa-check`;
+                                                                } else {
+                                                                    icon.className = `fas fa-xmark`;
+                                                                }
+                                                            }} style={{ marginLeft: "8px" }}>
+                                                                {/* Test source */}
+                                                                <i className={`fas fa-magnifying-glass-arrow-right`}></i>
+                                                            </Button>
                                                         </Tooltip>
                                                     </ListItem>
                                                 ))}
@@ -1706,6 +1752,23 @@ export default function PlayerPage({ params }: MovieProps) {
                                                                     textOverflow: "ellipsis",
                                                                     width: "100%",
                                                                 }}>{file.label}</span>
+                                                                {file.backup && <Tooltip title={`Check source`} placement="left" variant={'plain'} size={'sm'}>
+                                                                    <Button variant="outlined" color={"neutral"} size="sm" onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        const icon = e.currentTarget.querySelector('i');
+                                                                        if (!icon || !file.url) return;
+                                                                        icon.className = `fas fa-sync fa-spin`;
+                                                                        const testResult = await testVideo(file.url);
+                                                                        if (testResult) {
+                                                                            icon.className = `fas fa-check`;
+                                                                        } else {
+                                                                            icon.className = `fas fa-xmark`;
+                                                                        }
+                                                                    }} style={{ marginLeft: "8px" }}>
+                                                                        {/* Test source */}
+                                                                        <i className={`fas fa-magnifying-glass-arrow-right`}></i>
+                                                                    </Button>
+                                                                </Tooltip>}
                                                                 <Button variant="outlined" color={"neutral"} size="sm" onClick={() => {
                                                                     if (file.url) {
                                                                         window.open(file.url, "_blank");
@@ -1713,7 +1776,7 @@ export default function PlayerPage({ params }: MovieProps) {
                                                                         navigator.clipboard.writeText(file.magnet);
                                                                         alert("Magnet link copied to clipboard");
                                                                     }
-                                                                }} style={{ marginLeft: "8px" }}>
+                                                                }}>
                                                                     <i className={`fas fa-${file.url ? "download" : "magnet"}`}></i>
                                                                 </Button>
                                                             </ListItem>

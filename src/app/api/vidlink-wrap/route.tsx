@@ -84,7 +84,13 @@ export async function GET(req: NextRequest) {
 
     const vidData = await vidRes.json();
 
-    return NextResponse.json(vidData);
+    return NextResponse.json({
+      ...vidData,
+      stream: {
+        ...vidData.stream,
+        playlist: `/api/passthru-proxy?url=${encodeURIComponent(vidData.stream.playlist)}&headers=${encodeURIComponent(JSON.stringify(HEADERS))}&Origin=${encodeURIComponent("https://vidlink.pro")}&Referer=${encodeURIComponent("https://vidlink.pro")}`,
+      }
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
