@@ -111,8 +111,9 @@ async function handler(req: NextRequest) {
             const extraParamsStr = extraParams.size > 0 ? `&${extraParams.toString()}` : '';
 
             // Build the proxy base URL from the incoming request
-            const reqUrl = req.nextUrl;
-            const proxyBase = `${reqUrl.origin}${reqUrl.pathname}?url=`;
+            const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+            const protocol = req.headers.get('x-forwarded-proto') ?? 'https';
+            const proxyBase = `${protocol}://${host}${req.nextUrl.pathname}?url=`;
 
             const rewritten = rewriteM3U8(text, proxyBase, targetUrl, extraParamsStr);
 
