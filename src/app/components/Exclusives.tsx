@@ -25,6 +25,14 @@ const exclusives: Exclusive[] = [
         link: 'nirvanna-tb-ts-tm',
         id: "nirvanna-tb-ts-tm",
         type: "movie"
+    },
+    {
+        title: "The Oldest View / Project Rolling Giant",
+        description: "Originally a web series by Kane Parsons, this short film by Kendrew Lee is a creepy and atmospheric horror story about memory and nostalgia.",
+        image: "https://files.catbox.moe/takexb.png",
+        link: 'project-rolling-giant',
+        id: "project-rolling-giant",
+        type: "movie"
     }
 ];
 export default exclusives;
