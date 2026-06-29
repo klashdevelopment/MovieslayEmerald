@@ -34,7 +34,7 @@ export default function BackroomsPage({movie}: {movie: Exclusive}) {
                             }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
                         <iframe 
-                            src={`https://www.dropbox.com/scl/fi/7o9qiaoofnaxfk9z98mev/backrooms-internal-480p.mp4?rlkey=vxliv6ci0v83iawdnajgjo9sd&st=d4b4399i&dl=0&raw=1`}
+                            src={`/player/eyJpZCI6MTA4MzM4MSwidHlwZSI6Im1vdmllIiwib3ZlcnJpZGVTb3VyY2UiOiJodHRwczovL3d3dy5kcm9wYm94LmNvbS9zY2wvZmkvN285cWlhb29mbmF4Zms5ejk4bWV2L2JhY2tyb29tcy1pbnRlcm5hbC00ODBwLm1wND9ybGtleT12eGxpdjZjaTB2ODNpYXdkbmFqZ2pvOXNkJnN0PWQ0YjQzOTlpJmRsPTAmcmF3PTEifQ==`}
                             allow="autoplay; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
                         <div className="info-card flex align gap-1">
                             <img src={`${movie.image}`} />
