@@ -5,7 +5,7 @@ import PageLayout, { useIsDesktop } from "@/app/components/PageLayout";
 import useRecentlyWatched from "@/app/data/RecentlyWatched";
 import { useEffect, useState } from "react";
 
-export default function NirvanaPage({movie}: {movie: Exclusive}) {
+export default function BackroomsPage({movie}: {movie: Exclusive}) {
     const [fullscreen, setFullscreen] = useState(false);
     const isDesktop = useIsDesktop();
     const rw = useRecentlyWatched();
@@ -34,7 +34,7 @@ export default function NirvanaPage({movie}: {movie: Exclusive}) {
                             }}><i className="fa-solid fa-compress"></i></button>
                         ) : null}
                         <iframe 
-                            src="https://pixeldrain.com/api/file/Gmcew5Gi"
+                            src={`https://drive.google.com/file/d/1xU5mDJELbL3WKVOhOLcWLCBOQC134OdZ/preview`}
                             allow="autoplay; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
                         <div className="info-card flex align gap-1">
                             <img src={`${movie.image}`} />

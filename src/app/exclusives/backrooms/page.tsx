@@ -5,9 +5,9 @@ import useRecentlyWatched from "@/app/data/RecentlyWatched";
 import exclusives, { Exclusive } from "@/app/components/Exclusives";
 import Head from "next/head";
 import { Metadata } from "next";
-import NirvanaPage from "./mvp";
+import BackroomsPage from "./mvp";
 
-const movie: Exclusive = exclusives.find((e) => e.id === 'nirvanna-tb-ts-tm')!;
+const movie: Exclusive = exclusives.find((e) => e.id === 'backrooms')!;
 
 export const metadata: Metadata = {
     title: `${movie.title} - Movieslay`,
@@ -33,6 +33,6 @@ export const metadata: Metadata = {
 
 export default function MoviePage() {
     return (
-        <NirvanaPage movie={movie} />
+        <BackroomsPage movie={movie} />
     );
 }

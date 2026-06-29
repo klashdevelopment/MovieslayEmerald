@@ -32,6 +32,7 @@ interface PlayerData {
     season?: number;
     episode?: number;
     startingTime?: number;
+    overrideSource?: string;
 }
 
 type FinalData = {
@@ -1031,12 +1032,24 @@ export default function PlayerPage({ params }: MovieProps) {
                     setCurrentTime(decoded.startingTime);
                 }
 
-                getMovies(parseInt(decoded.id), decoded.type === "movie" ? "movie" : "tv")
+                if(decoded.overrideSource) {
+                    setManualServer(true);
+                    const stream = {
+                        label: "Movieslay Override Source",
+                        type: decoded.overrideSource.includes(".m3u8") ? "hls" : "mp4",
+                        url: decoded.overrideSource,
+                        uuid: randomUUID()
+                    };
+                    setAllStreams([stream]);
+                    setCurrentStream(stream);
+                } else {
+                    getMovies(parseInt(decoded.id), decoded.type === "movie" ? "movie" : "tv")
                     .then(setTmdbData)
                     .catch((err) => {
                         console.error("Failed to fetch TMDB data:", err);
                         setError("Failed to fetch media data");
                     });
+                }
             } catch (e) {
                 console.error("Failed to decode player data:", e);
                 setError("Invalid player data");

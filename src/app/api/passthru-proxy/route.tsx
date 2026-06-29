@@ -67,6 +67,7 @@ async function handler(req: NextRequest) {
         if (referer) headers['Referer'] = referer;
         const cookie = req.headers.get('cookie');
         const ua = req.headers.get('user-agent');
+        const mode = req.headers.get('mode');
         if (cookie) headers['Cookie'] = cookie;
         if (ua) headers['User-Agent'] = ua;
 
@@ -84,6 +85,8 @@ async function handler(req: NextRequest) {
             method: req.method,
             headers,
             body,
+            referrer: referer || undefined,
+            mode: mode as RequestMode || 'cors',
         });
         const reader = response.body!.getReader();
         const { value: firstChunk } = await reader.read();
