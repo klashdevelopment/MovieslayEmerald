@@ -1041,6 +1041,14 @@ export default function PlayerPage({ params }: MovieProps) {
                         uuid: randomUUID()
                     };
                     setAllStreams([stream]);
+                    setAllFinalDatas([{
+                        from: "override",
+                        data: {
+                            stream
+                        }
+                    }]);
+                    setPendingTasksMax(0);
+                    setPendingTasks(0);
                     setCurrentStream(stream);
                 } else {
                     getMovies(parseInt(decoded.id), decoded.type === "movie" ? "movie" : "tv")
