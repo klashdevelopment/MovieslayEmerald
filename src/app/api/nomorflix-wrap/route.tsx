@@ -282,7 +282,7 @@ const SOURCES = {
 const SOURCE_URLS = {
     movie: (src: string, id: string) => `https://streamguide.cfd/${src}/movie/${id}?verify=false`,
     tv: (src: string, id: string, s: string, e: string) => `https://streamguide.cfd/${src}/tv/${id}/${s}/${e}?verify=false`,
-    anime: (src: string, id: string, episode: string, mal?: string | undefined) => `https://streamguide.cfd/${src}/anime/${id}/${episode}?mal=${mal||id}&verify=false`
+    anime: (src: string, id: string, episode: string, mal?: string | undefined) => `https://streamguide.cfd/${src}/anime/${id}/${episode}?mal=${mal || id}&verify=false`
 }
 
 export async function GET(request: NextRequest) {
@@ -293,6 +293,16 @@ export async function GET(request: NextRequest) {
     const type = params.get('type') ?? undefined;
     const source = params.get('source') ?? undefined;
     const mal = params.get('malId') ?? undefined;
+
+    const disabled = true;
+    if (disabled) {
+        return NextResponse.json({
+            sources: {
+                movies_tv: {},
+                anime: {}
+            }
+        }); // disabled :/
+    }
 
     if (type === 'list') {
         return NextResponse.json({
@@ -338,7 +348,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             sources: sources
         })
-    } catch(err: any) {
+    } catch (err: any) {
         return NextResponse.json({
             sources: [],
             error: err.message
