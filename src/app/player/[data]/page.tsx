@@ -917,14 +917,14 @@ export default function PlayerPage({ params }: MovieProps) {
                         return;
                     }
                     const streams = [{
-                        label: `VidLink ${stream.id} PLST`,
+                        label: `VidLink ${stream.id} PLST / ${data.sourceId}`,
                         type: stream.type,
                         url: stream.playlist,
                         uuid: randomUUID(),
-                    }, ...Object.keys(data.qualities).map((q: any) => ({
-                        label: `VidLink ${stream.id} ${q}p`,
-                        type: data.qualities[q].type,
-                        url: data.qualities[q].url,
+                    }, ...Object.keys(stream.qualities||{}).map((q: any) => ({
+                        label: `VidLink ${stream.id} ${q}p / ${data.sourceId}`,
+                        type: stream.qualities[q].type,
+                        url: stream.qualities[q].url,
                         uuid: randomUUID(),
                     }))];
                     const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
