@@ -143,7 +143,7 @@ export default function SeriesPage({ params }: MovieProps) {
                     <div className="flex gap-1 movie-list">
                         {cast.map((movie) => (
                             <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { router.push(`/${movie.media_type?.replaceAll('tv', 'series')}/${movie.id}`) }}>
-                                <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
+                                <img src={!movie.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
                                 <span>{movie.title}</span>
                             </div>
                         ))}
@@ -153,7 +153,7 @@ export default function SeriesPage({ params }: MovieProps) {
                     <div className="flex gap-1 movie-list">
                         {crew.map((show) => (
                             <div key={show.id} className={`movie-card${show.adult ? ' adult' : ''}`} onClick={() => { router.push(`/${show.media_type?.replaceAll('tv', 'series')}/${show.id}`) }}>
-                                <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${show.poster_path}`} alt={show.title} />
+                                <img src={!show.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${show.poster_path}`} alt={show.title} />
                                 <span>{show.title}</span>
                             </div>
                         ))}
