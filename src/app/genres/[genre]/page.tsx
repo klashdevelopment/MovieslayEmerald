@@ -82,7 +82,7 @@ export default function GenrePage({ params }: GenrePageProps) {
                                 {row.map((movie: any) => (
                                     <div key={movie.id} style={{ width: '50%', maxHeight: '300px', gap: '10px' }} className={'mobile-center'}>
                                         <div style={{ flexDirection: 'column' }} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { goTo(movie.id, movie.title ? 'movie' : 'series') }}>
-                                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
+                                            <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
                                             <span>{movie.title || movie.name}</span>
                                         </div>
                                         <div className={"hide-on-mobile"} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minHeight: 0 }}>

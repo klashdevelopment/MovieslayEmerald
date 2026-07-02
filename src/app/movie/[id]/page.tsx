@@ -110,7 +110,7 @@ export default function MoviePage({ params }: MovieProps) {
                             type: 'movie'
                         }))}`).replace('%id%', `${movie?.id}`)}`}></iframe>
                         <div className="info-card flex align gap-1">
-                            <img src={`https://image.tmdb.org/t/p/w342${movie?.poster_path}`} />
+                            <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie?.poster_path}`} />
                             <div className="flex flex-col justify details">
                                 <b>{movie?.title}</b>
                                 <p>{movie?.overview}</p>

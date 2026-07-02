@@ -125,7 +125,7 @@ export default function MovieIndex() {
                         <div className="flex gap-1 movie-list">
                             {results?.results.filter(r => r.media_type === 'movie' && !r.adult).map((result) => (
                                 <div key={result.id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo(result.id, result.media_type) }}>
-                                    <img src={`https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={getNameOrTitle(result)} />
+                                    <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={getNameOrTitle(result)} />
                                     <span>{getNameOrTitle(result)}</span>
                                 </div>
                             ))}
@@ -134,7 +134,7 @@ export default function MovieIndex() {
                         <div className="flex gap-1 movie-list">
                             {results?.results.filter(r => r.media_type === 'tv' || r.media_type === 'series' && !r.adult).map((result) => (
                                 <div key={result.id} className={`movie-card${result.adult ? ' adult' : ''}`} onClick={() => { goTo(result.id, result.media_type) }}>
-                                    <img src={`https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={(result as TVShow).name} />
+                                    <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${result.poster_path}`} alt={(result as TVShow).name} />
                                     <span>{(result as TVShow).name}</span>
                                 </div>
                             ))}

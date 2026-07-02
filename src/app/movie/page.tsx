@@ -78,7 +78,7 @@ export default function MovieIndex() {
                 <div className="flex gap-1 movie-list">
                     {movies.map((movie) => (
                         <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { goTo(movie.id, 'movie') }}>
-                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
+                            <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
                             <span>{movie.title}</span>
                         </div>
                     ))}
@@ -88,7 +88,7 @@ export default function MovieIndex() {
                 <div className="flex gap-1 movie-list">
                     {trendingMovies.map((movie) => (
                         <div key={movie.id} className={`movie-card${movie.adult ? ' adult' : ''}`} onClick={() => { goTo(movie.id, 'movie') }}>
-                            <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
+                            <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} />
                             <span>{movie.title}</span>
                         </div>
                     ))}

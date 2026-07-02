@@ -321,7 +321,10 @@ export default function PlayerPage({ params }: MovieProps) {
                     // const validStreams = (await Promise.all(    
                     //     streams.map(async (s: any) => (await validateStream(s) ? s : null))
                     // )).filter(Boolean) as typeof streams;
-                    commitResults(streams, [], { from: "a111xyz", data });
+                    commitResults({
+                        valid: streams,
+                        invalid: []
+                    }, [], { from: "a111xyz", data });
                 } catch (error) {
                     console.error("Error fetching a111xyz sources:", error);
                 } finally {
@@ -348,11 +351,15 @@ export default function PlayerPage({ params }: MovieProps) {
                         label: `DLPeachify ${s.label}`,
                         url: s.url,
                         uuid: randomUUID(),
+                        type: 'mp4'
                     }));
                     const validDownloads = (await Promise.all(
                         streams.map(async (s: any) => (await validateDownloadable(s.url) ? s : null))
                     )).filter(Boolean) as typeof streams;
-                    commitResults(validDownloads.map((s: any) => ({ ...s, type: "mp4" })), [], { from: "dlpeachify", data });
+                    commitResults({
+                        valid: validDownloads.map((s: any) => ({ ...s, type: "mp4" })),
+                        invalid: streams.filter((s:any) => !validDownloads.includes(s))
+                    }, [], { from: "dlpeachify", data });
                     setPendingTasks((p) => p - 1);
                 } catch (error) {
                     console.error("Error fetching dl.peachify sources:", error);
@@ -431,7 +438,10 @@ export default function PlayerPage({ params }: MovieProps) {
                                         streamsRaw.map(async (s: any) => (await validateStream(s) ? s : null))
                                     )).filter(Boolean) as typeof streamsRaw;
 
-                                    commitResults(valid, [], { from: `nomorflix-${lang}-${source}`, data });
+                                    commitResults({
+                                        valid,
+                                        invalid: streamsRaw.filter((s:any) => !valid.includes(s))
+                                    }, [], { from: `nomorflix-${lang}-${source}`, data });
                                     break;
                                 } catch {
                                     continue;
@@ -497,7 +507,10 @@ export default function PlayerPage({ params }: MovieProps) {
                                             streamsRaw.map(async (s: any) => (await validateStream(s) ? s : null))
                                         )).filter(Boolean) as typeof streamsRaw;
 
-                                        commitResults(valid, [], { from: `nomorflix-anime-${lang}-${source}`, data });
+                                        commitResults({
+                                            valid,
+                                            invalid: streamsRaw.filter((s:any) => !valid.includes(s))
+                                        }, [], { from: `nomorflix-anime-${lang}-${source}`, data });
                                         break;
                                     } catch {
                                         continue;
@@ -904,11 +917,16 @@ export default function PlayerPage({ params }: MovieProps) {
                         return;
                     }
                     const streams = [{
-                        label: `VidLink ${stream.id}`,
+                        label: `VidLink ${stream.id} PLST`,
                         type: stream.type,
                         url: stream.playlist,
                         uuid: randomUUID(),
-                    }];
+                    }, ...Object.keys(data.qualities).map((q: any) => ({
+                        label: `VidLink ${stream.id} ${q}p`,
+                        type: data.qualities[q].type,
+                        url: data.qualities[q].url,
+                        uuid: randomUUID(),
+                    }))];
                     const validStreams = await partitionStreams<{ label: string; type: string; url: string; uuid: string; }>(streams);
                     const captions = (stream.captions ?? []).map((sub: any) => ({
                         type: sub.type || captionType(sub.url),

@@ -5,7 +5,7 @@ export async function getVylaSources(): Promise<any[]> {
         return sourcesCache.data;
     }
     // Vyla is literally the GOAT thank you SO much
-    const response = await fetch(`https://missourimonster-movieslay.hf.space/api?sources_meta`, {
+    const response = await fetch(`https://missourimonster-x.hf.space/api?sources_meta`, {
         headers: { "Cache-Control": "public, max-age=3600", 'X-API-Key': process.env.VYLA_API_KEY || "", 'Authorization': `Bearer ${process.env.VYLA_API_KEY || ""}` },
     });
     if (!response.ok) throw new Error(`Error fetching health: ${response.statusText}`);
@@ -21,8 +21,8 @@ export async function getVylaSources(): Promise<any[]> {
 
 export async function getVylaSubtitles(id: string, type: "movie" | "tv" = "tv", s?: string | null, e?: string | null) {
     const url = type === "movie"
-        ? `https://missourimonster-movieslay.hf.space/api/subtitles/movie/${id}`
-        : `https://missourimonster-movieslay.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
+        ? `https://missourimonster-x.hf.space/api/subtitles/movie/${id}`
+        : `https://missourimonster-x.hf.space/api/subtitles/tv/${id}/s/${s}/e/${e}`;
     const response = await fetch(url, {
         headers: { 'X-API-Key': process.env.VYLA_API_KEY || "", 'Authorization': `Bearer ${process.env.VYLA_API_KEY || ""}`}
     });
@@ -38,12 +38,12 @@ export async function getVyla(id: string, type: "movie" | "tv" = "tv", s?: strin
         return getVylaSubtitles(id, type, s, e);
     }
     let url = type === "movie"
-        ? `https://missourimonster-movieslay.hf.space/api/movie?id=${id}`
-        : `https://missourimonster-movieslay.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
+        ? `https://missourimonster-x.hf.space/api/movie?id=${id}`
+        : `https://missourimonster-x.hf.space/api/tv?id=${id}&season=${s}&episode=${e}`;
     if (source) {
         url = type === "movie"
-            ? `https://missourimonster-movieslay.hf.space/api/test/${id}?source=${source}`
-            : `https://missourimonster-movieslay.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
+            ? `https://missourimonster-x.hf.space/api/test/${id}?source=${source}`
+            : `https://missourimonster-x.hf.space/api/test/${id}?season=${s}&episode=${e}&source=${source}`;
     }
     const response = await fetch(url, {
         headers: {

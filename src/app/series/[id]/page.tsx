@@ -184,7 +184,7 @@ export default function SeriesPage({ params }: MovieProps) {
                             ))}
                         </div>
                         <div className="info-card flex align gap-1">
-                            <img src={`https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
+                            <img src={!item.poster_path ? '/assets/placeholder.png' : `https://image.tmdb.org/t/p/w342${show?.poster_path}`} />
                             <div className="flex flex-col justify details">
                                 <b>{show?.name} ({show?.first_air_date.split('-')[0]})</b>
                                 <p>{show?.overview}</p>

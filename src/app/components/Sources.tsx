@@ -15,8 +15,8 @@ export const sources: {
         "icon": "/assets/source_icon.png"
     },
     "vyla": { // could move to vyla.cc soon
-        "series": "https://player.vyla.cc/?id=%id%&season=%sid%&episode=%eid%",
-        "movie": "https://player.vyla.cc/?id=%id%",
+        "series": "https://1c34-x.hf.space/?id=%id%&season=%sid%&episode=%eid%",
+        "movie": "https://1c34-x.hf.space/?id=%id%",
         "tooltip": "Vyla (partner, ad-free)",
         "tags": ["recommended", "partner", "ad-free"],
         "icon": "/assets/vyla-api-logo.png"
